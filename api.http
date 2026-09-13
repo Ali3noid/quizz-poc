@@ -1,0 +1,46 @@
+### Success Password Test
+POST http://localhost:5173/api/gate
+Content-Type: application/json
+
+{
+  "password": "turbo"
+}
+
+### Faile Password Test
+POST http://localhost:5173/api/gate
+Content-Type: application/json
+
+{
+  "password": "zlehaslo"
+}
+
+### Success Submit Test (Exact answer)
+POST http://localhost:5173/api/submit
+Content-Type: application/json
+
+{
+  "riddleId": "1",
+  "answer": "Matrix",
+  "nickname": "Tester",
+  "hints_used": 2
+}
+
+### Success Submit Test (Alternative answer normalized)
+POST http://localhost:5173/api/submit
+Content-Type: application/json
+
+{
+  "riddleId": "1",
+  "answer": "  the   matrix  ",
+  "nickname": "Tester"
+}
+
+### Failed Submit Test (Wrong answer)
+POST http://localhost:5173/api/submit
+Content-Type: application/json
+
+{
+  "riddleId": "1",
+  "answer": "Incepcja",
+  "nickname": "Tester"
+}
