@@ -2,6 +2,7 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import { env } from '$env/dynamic/private';
 import { RIDDLES } from '$lib/server/riddle';
+import type { SubmissionInsert } from '$lib/types/database';
 
 function normalizeText(text: string): string {
     return text
@@ -12,10 +13,10 @@ function normalizeText(text: string): string {
         .replace(/\s+/g, ' ');
 }
 
-export const POST: RequestHandler = async ({ request, cookies }) => {
+export const POST: RequestHandler = async ({ request, cookies, locals }) => {
     try {
         const body = await request.json();
-        const { riddleId, answer, nickname, hints_used } = body;
+        const { riddleId, answer, nickname, hints_used, playerId: bodyPlayerId } = body;
 
         if (!riddleId || typeof riddleId !== 'string') {
             return json({ error: 'Brak identyfikatora zagadki' }, { status: 400 });
@@ -38,22 +39,45 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         const supabaseUrl = env.SUPABASE_URL;
         const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
-        const cookiePlayerNickname = cookies.get('player_nickname');
-        const finalNickname = cookiePlayerNickname || (typeof nickname === 'string' && nickname.trim() ? nickname.trim() : 'Anonim');
-
         if (supabaseUrl && supabaseKey) {
             const supabase = createClient(supabaseUrl, supabaseKey);
-            const submissionPayload: Record<string, unknown> = {
-                nickname: finalNickname,
-                riddle_id: riddleId,
-                hints_used: parsedHintsUsed,
-                is_correct: isCorrect
-            };
 
-            const { error: dbError } = await supabase.from('submissions').insert(submissionPayload);
+            let playerId = (typeof bodyPlayerId === 'string' && bodyPlayerId.trim())
+                ? bodyPlayerId.trim()
+                : (locals.player?.id || cookies.get('player_id') || null);
 
-            if (dbError) {
-                console.error('Błąd zapisu do Supabase:', dbError);
+            const cookiePlayerNickname = cookies.get('player_nickname');
+            const targetNickname = (typeof nickname === 'string' && nickname.trim())
+                ? nickname.trim()
+                : cookiePlayerNickname;
+
+            if (!playerId && targetNickname && targetNickname !== 'Anonim' && targetNickname !== 'Gość') {
+                const { data: player } = await supabase
+                    .from('players')
+                    .select('id')
+                    .ilike('nickname', targetNickname)
+                    .maybeSingle();
+
+                if (player?.id) {
+                    playerId = player.id;
+                }
+            }
+
+            if (playerId) {
+                const submissionPayload: SubmissionInsert = {
+                    player_id: playerId,
+                    riddle_id: riddleId,
+                    hints_used: parsedHintsUsed,
+                    is_correct: isCorrect
+                };
+
+                const { error: dbError } = await supabase.from('submissions').insert(submissionPayload);
+
+                if (dbError) {
+                    console.error('Błąd zapisu do Supabase:', dbError);
+                }
+            } else {
+                console.warn('Pominięto zapis do Supabase: brak powiązanego zarejestrowanego gracza (player_id)');
             }
         } else {
             console.warn('Brak konfiguracji SUPABASE_URL lub SUPABASE_SERVICE_ROLE_KEY w zmiennych środowiskowych');

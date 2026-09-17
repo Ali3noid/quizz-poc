@@ -28,7 +28,18 @@ export const load: PageServerLoad = async () => {
 
         const { data, error } = await supabase
             .from('submissions')
-            .select('*')
+            .select(`
+                id,
+                player_id,
+                riddle_id,
+                hints_used,
+                is_correct,
+                created_at,
+                players (
+                    id,
+                    nickname
+                )
+            `)
             .order('created_at', { ascending: true });
 
         if (error) {
@@ -47,7 +58,13 @@ export const load: PageServerLoad = async () => {
         });
 
         const rankings: RankingEntry[] = validSubmissions.map((item: Record<string, unknown>, index: number) => {
-            const nickname = (typeof item.nickname === 'string' && item.nickname.trim())
+            const playerObj = (item.players && typeof item.players === 'object')
+                ? (Array.isArray(item.players) ? item.players[0] : item.players)
+                : null;
+
+            const nickname = (playerObj && typeof playerObj === 'object' && typeof (playerObj as Record<string, unknown>).nickname === 'string' && (playerObj as Record<string, unknown>).nickname)
+                ? ((playerObj as Record<string, unknown>).nickname as string).trim()
+                : (typeof item.nickname === 'string' && item.nickname.trim())
                 ? item.nickname.trim()
                 : (typeof item.player === 'string' && item.player.trim())
                 ? item.player.trim()

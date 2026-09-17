@@ -66,12 +66,9 @@
     let authPassword = $state('');
     let authError = $state('');
     let isAuthLoading = $state(false);
-    let isGuest = $state(false);
 
     // Ksywka aktualnego gracza
-    let currentNickname = $derived(
-        data.player?.nickname || (isGuest ? (authNickname || 'Gość') : '')
-    );
+    let currentNickname = $derived(data.player?.nickname || '');
 
     $effect(() => {
         if (data.player?.nickname) {
@@ -137,21 +134,12 @@
         try {
             await fetch('/api/auth/logout', { method: 'POST' });
             localStorage.removeItem('quiz_nickname');
-            isGuest = false;
             authNickname = '';
             authPassword = '';
             await invalidateAll();
         } catch (err) {
             console.error('Błąd wylogowania:', err);
         }
-    }
-
-    function continueAsGuest() {
-        isGuest = true;
-        if (!authNickname.trim()) {
-            authNickname = 'Gość_' + Math.floor(1000 + Math.random() * 9000);
-        }
-        localStorage.setItem('quiz_nickname', authNickname);
     }
 
     // --- LOGIKA PODPOWIEDZI ---
@@ -252,7 +240,7 @@
                     class="w-full bg-neutral-900 border-4 border-neutral-800 rounded-[3rem] px-12 py-16 text-center text-7xl md:text-9xl tracking-[0.4em] text-neutral-100 placeholder:text-neutral-800 focus:outline-none focus:border-neutral-600 focus:ring-4 focus:ring-neutral-700 transition-all shadow-2xl disabled:opacity-30"
             />
         </div>
-    {:else if !data.player && !isGuest}
+    {:else if !data.player}
         <!-- WIDOK PIERWSZEGO ODPALENIA / REJESTRACJI I LOGOWANIA -->
         <div class="w-full max-w-md bg-neutral-900/90 border border-neutral-800 rounded-3xl p-8 shadow-2xl animate-fade-in backdrop-blur-sm">
             <div class="text-center mb-6">
@@ -264,7 +252,7 @@
                 </h1>
                 <p class="text-sm text-neutral-400 mt-1">
                     {authMode === 'register'
-                        ? 'Utwórz konto gracza, aby zapisywać wyniki w rankingu'
+                        ? 'Utwórz konto gracza, aby brać udział w quizie i rankingu'
                         : 'Zaloguj się na swoje konto gracza'}
                 </p>
             </div>
@@ -335,16 +323,6 @@
                         <span>{authMode === 'register' ? 'Zarejestruj się i zacznij grę' : 'Zaloguj się'}</span>
                     {/if}
                 </button>
-
-                <div class="pt-2 text-center">
-                    <button
-                        type="button"
-                        onclick={continueAsGuest}
-                        class="text-xs text-neutral-500 hover:text-neutral-300 transition-colors underline cursor-pointer"
-                    >
-                        Graj jako gość (bez hasła)
-                    </button>
-                </div>
             </form>
         </div>
     {:else}
@@ -371,8 +349,8 @@
                     <div class="flex items-center gap-3 bg-neutral-950 px-4 py-2 rounded-xl border border-neutral-800">
                         <span class="text-xs text-neutral-400">Gracz:</span>
                         <span class="text-sm font-bold text-neutral-100 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full {data.player ? 'bg-emerald-400' : 'bg-amber-400'} inline-block"></span>
-                            {currentNickname || 'Anonim'}
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
+                            {currentNickname}
                         </span>
                         {#if data.player}
                             <button
@@ -381,13 +359,6 @@
                                 class="ml-2 text-xs text-neutral-400 hover:text-rose-400 transition-colors underline cursor-pointer"
                             >
                                 Wyloguj
-                            </button>
-                        {:else}
-                            <button
-                                onclick={() => { isGuest = false; }}
-                                class="ml-2 text-xs text-emerald-400 hover:text-emerald-300 transition-colors underline cursor-pointer"
-                            >
-                                Zaloguj / Rejestracja
                             </button>
                         {/if}
                     </div>
