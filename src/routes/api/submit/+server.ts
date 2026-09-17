@@ -12,7 +12,7 @@ function normalizeText(text: string): string {
         .replace(/\s+/g, ' ');
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, cookies }) => {
     try {
         const body = await request.json();
         const { riddleId, answer, nickname, hints_used } = body;
@@ -33,21 +33,24 @@ export const POST: RequestHandler = async ({ request }) => {
         const normalizedUserAnswer = normalizeText(answer);
         const isCorrect = riddle.answers.some((ans) => normalizeText(ans) === normalizedUserAnswer);
 
-        const parsedHintsUsed = typeof hints_used === 'number'
-            ? Math.max(0, Math.floor(hints_used))
-            : 0;
+        const parsedHintsUsed = typeof hints_used === 'number' ? hints_used : 0;
 
         const supabaseUrl = env.SUPABASE_URL;
         const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
+        const cookiePlayerNickname = cookies.get('player_nickname');
+        const finalNickname = cookiePlayerNickname || (typeof nickname === 'string' && nickname.trim() ? nickname.trim() : 'Anonim');
+
         if (supabaseUrl && supabaseKey) {
             const supabase = createClient(supabaseUrl, supabaseKey);
-            const { error: dbError } = await supabase.from('submissions').insert({
-                nickname: typeof nickname === 'string' && nickname.trim() ? nickname.trim() : 'Anonim',
+            const submissionPayload: Record<string, unknown> = {
+                nickname: finalNickname,
                 riddle_id: riddleId,
                 hints_used: parsedHintsUsed,
                 is_correct: isCorrect
-            });
+            };
+
+            const { error: dbError } = await supabase.from('submissions').insert(submissionPayload);
 
             if (dbError) {
                 console.error('Błąd zapisu do Supabase:', dbError);

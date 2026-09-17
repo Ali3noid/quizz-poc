@@ -1,3 +1,24 @@
+### Register New Player
+POST http://localhost:5173/api/auth/register
+Content-Type: application/json
+
+{
+  "nickname": "Tester",
+  "password": "tajnehaslo123"
+}
+
+### Login Player
+POST http://localhost:5173/api/auth/login
+Content-Type: application/json
+
+{
+  "nickname": "Tester",
+  "password": "tajnehaslo123"
+}
+
+### Logout Player
+POST http://localhost:5173/api/auth/logout
+
 ### Success Password Test
 POST http://localhost:5173/api/gate
 Content-Type: application/json
@@ -12,6 +33,15 @@ Content-Type: application/json
 
 {
   "password": "zlehaslo"
+}
+
+### Get Hint Test
+POST http://localhost:5173/api/hint
+Content-Type: application/json
+
+{
+  "riddleId": "1",
+  "hintIndex": 0
 }
 
 ### Success Submit Test (Exact answer)

@@ -1,8 +1,13 @@
+export type Hint = string | {
+    text?: string;
+    image?: string;
+};
+
 export interface Riddle {
     id: string;
     question: string;
     images: string[];
-    hints: string[];
+    hints: Hint[];
     answers: string[];
 }
 
@@ -16,9 +21,16 @@ export const RIDDLES: Record<string, Riddle> = {
         ],
         hints: [
             "Podpowiedź 1: Premiera w latach 90.",
-            "Podpowiedź 2: Zgarniała Oscary za efekty.",
-            "Podpowiedź 3: Reżyseria: rodzeństwo.",
-            "Podpowiedź 4: Czerwona albo niebieska pigułka.",
+            {
+                text: "Podpowiedź 2: Zgarniała Oscary za efekty wizualne.",
+                image: "https://picsum.photos/600/400"
+            },
+            {
+                image: "https://picsum.photos/600/400"
+            },
+            {
+                text: "Podpowiedź 4: Czerwona albo niebieska pigułka."
+            },
             "Podpowiedź 5: Neo i Morfeusz."
         ],
         answers: ["matrix", "the matrix"]

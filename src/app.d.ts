@@ -5,6 +5,10 @@ declare global {
 		// interface Error {}
 		interface Locals {
 			isAuthorized: boolean;
+			player: {
+				id: string;
+				nickname: string;
+			} | null;
 		}
 		// interface PageData {}
 		// interface PageState {}

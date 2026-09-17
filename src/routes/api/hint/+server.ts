@@ -10,7 +10,7 @@ export const POST: RequestHandler = async ({ request }) => {
             return json({ error: 'Nie znaleziono zagadki' }, { status: 404 });
         }
 
-        if (hintIndex < 0 || hintIndex >= riddle.hints.length) {
+        if (typeof hintIndex !== 'number' || hintIndex < 0 || hintIndex >= riddle.hints.length) {
             return json({ error: 'Brak podpowiedzi o tym indeksie' }, { status: 400 });
         }
 
