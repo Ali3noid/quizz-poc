@@ -47,25 +47,37 @@ export const POST: RequestHandler = async ({ request, cookies, locals }) => {
                 : (locals.player?.id || cookies.get('player_id') || null);
 
             const cookiePlayerNickname = cookies.get('player_nickname');
-            const targetNickname = (typeof nickname === 'string' && nickname.trim())
+            let finalNickname = (typeof nickname === 'string' && nickname.trim())
                 ? nickname.trim()
-                : cookiePlayerNickname;
+                : (locals.player?.nickname || cookiePlayerNickname || null);
 
-            if (!playerId && targetNickname && targetNickname !== 'Anonim' && targetNickname !== 'Gość') {
+            if (!playerId && finalNickname && finalNickname !== 'Anonim' && finalNickname !== 'Gość') {
                 const { data: player } = await supabase
                     .from('players')
-                    .select('id')
-                    .ilike('nickname', targetNickname)
+                    .select('id, nickname')
+                    .ilike('nickname', finalNickname)
                     .maybeSingle();
 
                 if (player?.id) {
                     playerId = player.id;
+                    if (!finalNickname) finalNickname = player.nickname;
+                }
+            } else if (playerId && !finalNickname) {
+                const { data: player } = await supabase
+                    .from('players')
+                    .select('nickname')
+                    .eq('id', playerId)
+                    .maybeSingle();
+
+                if (player?.nickname) {
+                    finalNickname = player.nickname;
                 }
             }
 
             if (playerId) {
                 const submissionPayload: SubmissionInsert = {
                     player_id: playerId,
+                    nickname: finalNickname || 'Gracz',
                     riddle_id: riddleId,
                     hints_used: parsedHintsUsed,
                     is_correct: isCorrect

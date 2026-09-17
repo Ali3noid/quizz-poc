@@ -195,6 +195,7 @@
                     riddleId: data.riddle.id,
                     answer,
                     nickname: currentNickname || authNickname || 'Anonim',
+                    playerId: data.player?.id,
                     hints_used: revealedHints.length
                 })
             });

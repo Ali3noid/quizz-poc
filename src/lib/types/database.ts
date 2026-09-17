@@ -7,7 +7,8 @@ export interface Player {
 
 export interface Submission {
     id: string;
-    player_id: string;
+    player_id?: string;
+    nickname?: string;
     riddle_id: string;
     hints_used: number;
     is_correct: boolean;
@@ -16,7 +17,8 @@ export interface Submission {
 
 export interface SubmissionInsert {
     id?: string;
-    player_id: string;
+    player_id?: string;
+    nickname?: string;
     riddle_id: string;
     hints_used?: number;
     is_correct?: boolean;
