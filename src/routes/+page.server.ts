@@ -19,8 +19,16 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
             .eq('id', player.id)
             .maybeSingle();
 
-        if (error || !playerRow?.created_at) {
-            throw error ?? new Error('Player missing');
+        if (error) {
+            throw error;
+        }
+
+        // A stale browser session can outlive a player removed from the database.
+        // Clear it so the normal login view is rendered instead of treating it as a server failure.
+        if (!playerRow?.created_at) {
+            cookies.delete('player_nickname', { path: '/' });
+            cookies.delete('player_id', { path: '/' });
+            return { isAuthorized, player: null, riddles: [], error: null };
         }
 
         return {
