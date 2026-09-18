@@ -1,42 +1,30 @@
-# sv
+# Quiz PoC
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A multi-riddle SvelteKit quiz with persistent player progress stored in Supabase.
 
-## Creating a project
+## Running locally
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.17.0 create --template minimal --types ts --install npm quiz-poc
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Install dependencies with `npm install` (or `pnpm install` or `yarn`), then start the development server:
 
 ```sh
 npm run dev
 
-# or start the server and open the app in a new browser tab
+# start the server and open the app in a new browser tab
 npm run dev -- --open
 ```
 
 ## Building
 
-To create a production version of your app:
+Create a production build with:
 
 ```sh
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+Copy `empty.env` to `.env.local`, then set `GATE_PASSWORD`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY`. Do not commit `.env.local`.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## Migrations and new riddles
+
+Run `supabase/migrations/202609190001_multi_riddle_progress.sql` once in the Supabase SQL Editor. It assumes the existing `players` and `submissions` tables are empty, so it does not backfill historical results. The migration creates riddles, persistent progress, and atomic functions for hints and attempts.
+
+Add a new riddle using `supabase/examples/add-riddle.sql`, with explicit ISO `timestamptz` values. Activity windows are half-open, `[starts_at, ends_at)`; overlapping schedules are rejected by the database.

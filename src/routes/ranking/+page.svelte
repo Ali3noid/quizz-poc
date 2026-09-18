@@ -31,7 +31,7 @@
                     Ranking Graczy
                 </h1>
                 <p class="text-sm text-neutral-400 mt-1">
-                    Najlepsze wyniki i czas rozwiązania zagadek.
+                    Łączny wynik ze wszystkich rozwiązanych zagadek.
                 </p>
             </div>
             <div class="bg-neutral-950/80 border border-neutral-800 rounded-2xl px-5 py-3 text-center self-center sm:self-auto shrink-0">
@@ -58,7 +58,7 @@
                     </div>
                     <h3 class="text-xl font-semibold text-neutral-200">Brak zarejestrowanych wyników</h3>
                     <p class="text-sm text-neutral-400 max-w-md">
-                        Bądź pierwszym graczem, który rozwiąże zagadkę i zdobędzie najwyższe miejsce na podium!
+                        Bądź pierwszym graczem, który rozwiąże zagadkę i zdobędzie miejsce w rankingu.
                     </p>
                     <a
                         href="/"
@@ -74,8 +74,9 @@
                             <tr class="bg-neutral-900/90 border-b border-neutral-800 text-xs font-semibold uppercase tracking-wider text-neutral-400">
                                 <th scope="col" class="py-4 px-6 text-center w-24">Miejsce</th>
                                 <th scope="col" class="py-4 px-6">Gracz</th>
-                                <th scope="col" class="py-4 px-6 text-center">Użyte podpowiedzi</th>
-                                <th scope="col" class="py-4 px-6 text-right">Czas</th>
+                                <th scope="col" class="py-4 px-6 text-center">Rozwiązane</th>
+                                <th scope="col" class="py-4 px-6 text-center">Podpowiedzi</th>
+                                <th scope="col" class="py-4 px-6 text-right">Ostatnie rozwiązanie</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-neutral-800/60 font-sans">
@@ -114,7 +115,7 @@
                                         </div>
                                     </td>
 
-                                    <!-- Użyte podpowiedzi -->
+                                    <td class="py-4 px-6 text-center font-mono text-neutral-200">{player.solvedCount}</td>
                                     <td class="py-4 px-6 text-center whitespace-nowrap">
                                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium font-mono
                                             {player.hintsUsed === 0
@@ -122,13 +123,12 @@
                                                 : player.hintsUsed <= 2
                                                 ? 'bg-neutral-800/80 text-neutral-300 border border-neutral-700'
                                                 : 'bg-amber-950/40 text-amber-400 border border-amber-800/50'}">
-                                            {player.hintsUsed} / 5
+                                            {player.hintsUsed}
                                         </span>
                                     </td>
 
-                                    <!-- Czas -->
                                     <td class="py-4 px-6 text-right whitespace-nowrap font-mono text-sm text-neutral-300">
-                                        {player.time}
+                                        {new Date(player.lastSolvedAt).toLocaleString('pl-PL')}
                                     </td>
                                 </tr>
                             {/each}

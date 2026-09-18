@@ -40,8 +40,7 @@ POST http://localhost:5173/api/hint
 Content-Type: application/json
 
 {
-  "riddleId": "1",
-  "hintIndex": 0
+  "riddleId": "1"
 }
 
 ### Success Submit Test (Exact answer)
@@ -50,9 +49,7 @@ Content-Type: application/json
 
 {
   "riddleId": "1",
-  "answer": "Matrix",
-  "nickname": "Tester",
-  "hints_used": 2
+  "answer": "Matrix"
 }
 
 ### Success Submit Test (Alternative answer normalized)
@@ -61,8 +58,7 @@ Content-Type: application/json
 
 {
   "riddleId": "1",
-  "answer": "  the   matrix  ",
-  "nickname": "Tester"
+  "answer": "  the   matrix  "
 }
 
 ### Failed Submit Test (Wrong answer)
@@ -71,6 +67,14 @@ Content-Type: application/json
 
 {
   "riddleId": "1",
-  "answer": "Incepcja",
-  "nickname": "Tester"
+  "answer": "Incepcja"
+}
+
+### Second attempt without a hint returns 409
+POST http://localhost:5173/api/submit
+Content-Type: application/json
+
+{
+  "riddleId": "1",
+  "answer": "Incepcja"
 }

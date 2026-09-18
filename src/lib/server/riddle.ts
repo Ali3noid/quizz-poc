@@ -1,38 +1,42 @@
-export type Hint = string | {
-    text?: string;
-    image?: string;
-};
+export type Hint = string | { text?: string; image?: string };
 
-export interface Riddle {
+export interface RiddleRecord {
+    id: string;
+    question: string;
+    images: unknown;
+    hints: unknown;
+    answers: string[];
+    starts_at: string;
+    ends_at: string;
+}
+
+export interface SafeRiddle {
     id: string;
     question: string;
     images: string[];
-    hints: Hint[];
-    answers: string[];
+    hintCount: number;
+    startsAt: string;
+    endsAt: string;
 }
 
-export const RIDDLES: Record<string, Riddle> = {
-    "1": {
-        id: "1",
-        question: "Jaki film łączy te 3 kadry?",
-        images: [
-            "https://picsum.photos/800/600",
-            "https://picsum.photos/800/600"
-        ],
-        hints: [
-            "Podpowiedź 1: Premiera w latach 90.",
-            {
-                text: "Podpowiedź 2: Zgarniała Oscary za efekty wizualne.",
-                image: "https://picsum.photos/600/400"
-            },
-            {
-                image: "https://picsum.photos/600/400"
-            },
-            {
-                text: "Podpowiedź 4: Czerwona albo niebieska pigułka."
-            },
-            "Podpowiedź 5: Neo i Morfeusz."
-        ],
-        answers: ["matrix", "the matrix"]
-    }
-};
+function isHint(value: unknown): value is Hint {
+    return typeof value === 'string' || (typeof value === 'object' && value !== null &&
+        (!('text' in value) || typeof value.text === 'string') &&
+        (!('image' in value) || typeof value.image === 'string'));
+}
+
+export function mapImages(value: unknown): string[] {
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+export function mapHints(value: unknown): Hint[] {
+    return Array.isArray(value) ? value.filter(isHint) : [];
+}
+
+export function toSafeRiddle(riddle: RiddleRecord): SafeRiddle {
+    return { id: riddle.id, question: riddle.question, images: mapImages(riddle.images), hintCount: mapHints(riddle.hints).length, startsAt: riddle.starts_at, endsAt: riddle.ends_at };
+}
+
+export function normalizeText(text: string): string {
+    return text.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+}

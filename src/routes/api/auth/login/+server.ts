@@ -1,8 +1,7 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { env } from '$env/dynamic/private';
 import { dev } from '$app/environment';
 import { verifyPassword } from '$lib/server/auth';
+import { getServerSupabase } from '$lib/server/supabase';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
     try {
@@ -18,14 +17,12 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         }
 
         const trimmedNickname = nickname.trim();
-        const supabaseUrl = env.SUPABASE_URL;
-        const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
-
-        if (!supabaseUrl || !supabaseKey) {
+        let supabase;
+        try {
+            supabase = getServerSupabase();
+        } catch {
             return json({ ok: false, message: 'Błąd konfiguracji bazy danych serwera' }, { status: 500 });
         }
-
-        const supabase = createClient(supabaseUrl, supabaseKey);
 
         const { data: players, error: dbError } = await supabase
             .from('players')

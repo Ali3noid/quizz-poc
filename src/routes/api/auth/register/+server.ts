@@ -1,9 +1,8 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { env } from '$env/dynamic/private';
 import { dev } from '$app/environment';
 import { hashPassword } from '$lib/server/auth';
+import { getServerSupabase } from '$lib/server/supabase';
 
 const registerPayloadSchema = z.object({
     nickname: z.string()
@@ -28,14 +27,12 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         }
 
         const { nickname: trimmedNickname, password } = parseResult.data;
-        const supabaseUrl = env.SUPABASE_URL;
-        const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
-
-        if (!supabaseUrl || !supabaseKey) {
+        let supabase;
+        try {
+            supabase = getServerSupabase();
+        } catch {
             return json({ ok: false, message: 'Błąd konfiguracji bazy danych serwera' }, { status: 500 });
         }
-
-        const supabase = createClient(supabaseUrl, supabaseKey);
 
         const { data: existingPlayers, error: checkError } = await supabase
             .from('players')

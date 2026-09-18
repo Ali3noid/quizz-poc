@@ -1,46 +1,30 @@
 import type { PageServerLoad } from './$types';
-import { createClient } from '@supabase/supabase-js';
-import { env } from '$env/dynamic/private';
+import { getServerSupabase } from '$lib/server/supabase';
 
 export interface RankingEntry {
-    id: string | number;
+    id: string;
     nickname: string;
     hintsUsed: number;
-    time: string;
-    isCorrect?: boolean;
-    createdAt?: string;
+    solvedCount: number;
+    lastSolvedAt: string;
 }
 
 export const load: PageServerLoad = async () => {
-    const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-        console.warn('Brak konfiguracji Supabase w zmiennych środowiskowych');
-        return {
-            rankings: [] as RankingEntry[],
-            error: 'Brak konfiguracji bazy danych'
-        };
-    }
-
     try {
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        const supabase = getServerSupabase();
 
         const { data, error } = await supabase
-            .from('submissions')
+            .from('player_riddle_progress')
             .select(`
-                id,
                 player_id,
-                riddle_id,
-                hints_used,
-                is_correct,
-                created_at,
+                hints_revealed,
+                solved_at,
                 players (
                     id,
                     nickname
                 )
             `)
-            .order('created_at', { ascending: true });
+            .not('solved_at', 'is', null);
 
         if (error) {
             console.error('Błąd pobierania rankingu z Supabase:', error);
@@ -50,14 +34,8 @@ export const load: PageServerLoad = async () => {
             };
         }
 
-        const validSubmissions = (data || []).filter((item: Record<string, unknown>) => {
-            if (typeof item.is_correct === 'boolean') {
-                return item.is_correct;
-            }
-            return true;
-        });
-
-        const rankings: RankingEntry[] = validSubmissions.map((item: Record<string, unknown>, index: number) => {
+        const aggregate = new Map<string, RankingEntry>();
+        for (const item of (data || []) as Record<string, unknown>[]) {
             const playerObj = (item.players && typeof item.players === 'object')
                 ? (Array.isArray(item.players) ? item.players[0] : item.players)
                 : null;
@@ -70,56 +48,20 @@ export const load: PageServerLoad = async () => {
                 ? item.player.trim()
                 : 'Anonim';
 
-            let hintsUsed = 0;
-            if (typeof item.hints_used === 'number') {
-                hintsUsed = item.hints_used;
-            } else if (typeof item.hints_count === 'number') {
-                hintsUsed = item.hints_count;
-            } else if (Array.isArray(item.hints)) {
-                hintsUsed = item.hints.length;
-            }
-
-            let formattedTime = '-';
-            if (typeof item.duration === 'number' || typeof item.time_taken === 'number') {
-                const totalSeconds = (item.duration ?? item.time_taken) as number;
-                const minutes = Math.floor(totalSeconds / 60);
-                const seconds = totalSeconds % 60;
-                formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            } else if (typeof item.time === 'string' && item.time) {
-                formattedTime = item.time;
-            } else if (typeof item.created_at === 'string' && item.created_at) {
-                try {
-                    const date = new Date(item.created_at);
-                    if (!isNaN(date.getTime())) {
-                        formattedTime = date.toLocaleTimeString('pl-PL', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit'
-                        });
-                    }
-                } catch {
-                    formattedTime = String(item.created_at);
-                }
-            }
-
-            return {
-                id: (item.id as string | number) ?? index + 1,
-                nickname,
-                hintsUsed,
-                time: formattedTime,
-                isCorrect: typeof item.is_correct === 'boolean' ? item.is_correct : true,
-                createdAt: typeof item.created_at === 'string' ? item.created_at : undefined
-            };
-        });
+            const playerId = String(item.player_id);
+            const existing = aggregate.get(playerId);
+            const hints = typeof item.hints_revealed === 'number' ? item.hints_revealed : 0;
+            const solvedAt = String(item.solved_at);
+            aggregate.set(playerId, existing ? { ...existing, solvedCount: existing.solvedCount + 1, hintsUsed: existing.hintsUsed + hints, lastSolvedAt: existing.lastSolvedAt < solvedAt ? existing.lastSolvedAt : solvedAt } : { id: playerId, nickname, solvedCount: 1, hintsUsed: hints, lastSolvedAt: solvedAt });
+        }
+        const rankings = [...aggregate.values()];
 
         rankings.sort((a, b) => {
+            if (a.solvedCount !== b.solvedCount) return b.solvedCount - a.solvedCount;
             if (a.hintsUsed !== b.hintsUsed) {
                 return a.hintsUsed - b.hintsUsed;
             }
-            if (a.createdAt && b.createdAt) {
-                return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-            }
-            return 0;
+            return new Date(a.lastSolvedAt).getTime() - new Date(b.lastSolvedAt).getTime();
         });
 
         return {
