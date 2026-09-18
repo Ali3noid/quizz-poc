@@ -99,7 +99,7 @@ export const POST: RequestHandler = async ({ request, cookies, locals }) => {
             isCorrect,
             message: isCorrect
                 ? 'Gratulacje! To poprawna odpowiedź!'
-                : 'Niestety, to nie jest poprawna odpowiedź. Spróbuj ponownie.'
+                : 'Niestety, to nie jest poprawna odpowiedź. Odkryj podpowiedź, aby odnowić limit prób.'
         });
     } catch (err) {
         console.error('Błąd podczas przetwarzania zgłoszenia:', err);

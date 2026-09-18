@@ -164,6 +164,11 @@
             if (res.ok) {
                 const result = await res.json();
                 revealedHints = [...revealedHints, result.hint];
+                attemptsLeft = 1;
+                if (submissionStatus === 'error') {
+                    submissionStatus = 'idle';
+                    submissionFeedback = '';
+                }
             }
         } catch (err) {
             console.error('Błąd pobierania podpowiedzi:', err);
@@ -174,6 +179,7 @@
 
     // --- LOGIKA ODPOWIEDZI ---
     let answer = $state('');
+    let attemptsLeft = $state(1);
     let isSubmitting = $state(false);
     let submissionStatus = $state<'idle' | 'success' | 'error'>('idle');
     let submissionFeedback = $state('');
@@ -181,7 +187,7 @@
 
     async function submitAnswer(e?: Event) {
         if (e) e.preventDefault();
-        if (!data.riddle || !answer.trim() || isSubmitting) return;
+        if (!data.riddle || !answer.trim() || isSubmitting || attemptsLeft <= 0 || submissionStatus === 'success') return;
 
         isSubmitting = true;
         submissionStatus = 'idle';
@@ -206,8 +212,14 @@
                 submissionStatus = 'success';
                 submissionFeedback = result.message || 'Gratulacje! To poprawna odpowiedź!';
             } else {
+                attemptsLeft = 0;
                 submissionStatus = 'error';
-                submissionFeedback = result.message || result.error || 'Niestety, to nie jest poprawna odpowiedź.';
+                const hasMoreHints = revealedHints.length < 5;
+                submissionFeedback = result.message || (
+                    hasMoreHints
+                        ? 'Niestety, to nie jest poprawna odpowiedź. Odkryj podpowiedź, aby spróbować ponownie!'
+                        : 'Niestety, to nie jest poprawna odpowiedź. Wykorzystano wszystkie próby i podpowiedzi.'
+                );
                 isAnswerShaking = true;
                 setTimeout(() => {
                     isAnswerShaking = false;
@@ -238,7 +250,7 @@
                     disabled={isLoading}
                     placeholder="••••••"
                     autocomplete="off"
-                    class="w-full bg-neutral-900 border-4 border-neutral-800 rounded-[3rem] px-12 py-16 text-center text-7xl md:text-9xl tracking-[0.4em] text-neutral-100 placeholder:text-neutral-800 focus:outline-none focus:border-neutral-600 focus:ring-4 focus:ring-neutral-700 transition-all shadow-2xl disabled:opacity-30"
+                    class="w-full bg-neutral-900 border-4 border-neutral-800 rounded-[3rem] px-12 py-16 text-center text-7xl md:text-9xl tracking-[0.4em] placeholder:text-neutral-800 focus:outline-none focus:ring-4 focus:ring-neutral-700 transition-all shadow-2xl disabled:opacity-30"
             />
         </div>
     {:else if !data.player}
@@ -288,7 +300,7 @@
                         maxlength="30"
                         disabled={isAuthLoading}
                         autocomplete="username"
-                        class="w-full bg-neutral-950 border border-neutral-800 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 rounded-xl px-4 py-3 text-neutral-100 placeholder:text-neutral-600 transition-all text-sm outline-none"
+                        class="w-full bg-neutral-950 border border-neutral-800 focus:ring-1 focus:ring-neutral-500 rounded-xl px-4 py-3 placeholder:text-neutral-600 transition-all text-sm outline-none"
                     />
                 </div>
 
@@ -301,7 +313,7 @@
                         placeholder="••••••••"
                         disabled={isAuthLoading}
                         autocomplete={authMode === 'register' ? 'new-password' : 'current-password'}
-                        class="w-full bg-neutral-950 border border-neutral-800 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 rounded-xl px-4 py-3 text-neutral-100 placeholder:text-neutral-600 transition-all text-sm outline-none"
+                        class="w-full bg-neutral-950 border border-neutral-800 focus:ring-1 focus:ring-neutral-500 rounded-xl px-4 py-3 placeholder:text-neutral-600 transition-all text-sm outline-none"
                     />
                 </div>
 
@@ -315,7 +327,7 @@
                 <button
                     type="submit"
                     disabled={isAuthLoading}
-                    class="w-full py-3.5 bg-neutral-100 text-neutral-900 font-bold rounded-xl hover:bg-white active:scale-[0.98] transition-all duration-200 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-2 flex items-center justify-center gap-2"
+                    class="w-full py-3.5 bg-neutral-100 text-neutral-900 font-bold rounded-xl hover:bg-white active:scale-[0.98] transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-2 flex items-center justify-center gap-2"
                 >
                     {#if isAuthLoading}
                         <span class="animate-spin inline-block w-4 h-4 border-2 border-neutral-900 border-t-transparent rounded-full"></span>
@@ -381,7 +393,7 @@
                          imgCount === 2 ? 'md:grid-cols-2 max-w-4xl' :
                          'md:grid-cols-3 max-w-6xl'}">
                         {#each data.riddle.images as src}
-                            <div class="relative aspect-[4/3] rounded-3xl overflow-hidden border border-neutral-800 shadow-xl bg-neutral-900">
+                            <div class="relative aspect-4/3 rounded-3xl overflow-hidden border border-neutral-800 shadow-xl bg-neutral-900">
                                 <img
                                         {src}
                                         alt="Kadr z zagadki"
@@ -447,6 +459,17 @@
 
             <!-- SEKCJA ODPOWIEDZI (Blok 8) -->
             <section class="max-w-2xl mx-auto w-full mt-10">
+                <!-- Informacja o limicie prób -->
+                <div class="flex items-center justify-between text-xs text-neutral-400 mb-2.5 px-1">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full {attemptsLeft > 0 ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
+                        <span>Limit odpowiedzi:</span>
+                    </span>
+                    <span class="font-mono font-medium {attemptsLeft > 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                        {attemptsLeft > 0 ? '1 / 1 dostępna próba' : '0 / 1 (odkryj podpowiedź, aby odnowić)'}
+                    </span>
+                </div>
+
                 <form
                     onsubmit={submitAnswer}
                     class="flex flex-col items-center space-y-4"
@@ -456,19 +479,19 @@
                             <input
                                 type="text"
                                 bind:value={answer}
-                                disabled={isSubmitting || submissionStatus === 'success'}
-                                placeholder="Wpisz swoją odpowiedź..."
-                                class="flex-1 bg-neutral-900/80 border rounded-2xl px-6 py-4 text-lg text-neutral-100 placeholder:text-neutral-500 focus:outline-none transition-all shadow-inner disabled:opacity-60
+                                disabled={isSubmitting || submissionStatus === 'success' || attemptsLeft <= 0}
+                                placeholder={attemptsLeft <= 0 ? (revealedHints.length >= 5 ? 'Wykorzystano wszystkie próby i podpowiedzi' : 'Odkryj podpowiedź, aby odnowić próbę...') : 'Wpisz swoją odpowiedź...'}
+                                class="flex-1 bg-neutral-900/80 border rounded-2xl px-6 py-4 text-lg placeholder:text-neutral-500 focus:outline-none transition-all shadow-inner disabled:opacity-60
                                     {submissionStatus === 'success'
                                         ? 'border-emerald-500 ring-2 ring-emerald-500/50 bg-emerald-950/20 text-emerald-200'
                                         : submissionStatus === 'error'
                                         ? 'border-rose-500 ring-2 ring-rose-500/50 bg-rose-950/20'
-                                        : 'border-neutral-700 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-600'}"
+                                        : 'border-neutral-700 focus:ring-2 focus:ring-neutral-600'}"
                             />
                             <button
                                 type="submit"
-                                disabled={!answer.trim() || isSubmitting || submissionStatus === 'success'}
-                                class="px-8 py-4 bg-neutral-100 text-neutral-900 font-bold rounded-2xl hover:bg-white active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-neutral-100 disabled:active:scale-100 shadow-lg cursor-pointer shrink-0"
+                                disabled={!answer.trim() || isSubmitting || submissionStatus === 'success' || attemptsLeft <= 0}
+                                class="px-8 py-4 bg-neutral-100 text-neutral-900 font-bold rounded-2xl hover:bg-white active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shrink-0"
                             >
                                 {#if isSubmitting}
                                     <span class="inline-flex items-center gap-2">
@@ -477,6 +500,8 @@
                                     </span>
                                 {:else if submissionStatus === 'success'}
                                     <span>Rozwiązano!</span>
+                                {:else if attemptsLeft <= 0}
+                                    <span>Brak prób</span>
                                 {:else}
                                     <span>Zatwierdź</span>
                                 {/if}
