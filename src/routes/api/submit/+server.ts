@@ -43,7 +43,22 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         if (!riddle) return json({ error: 'Nie znaleziono zagadki' }, { status: 404 });
         const isCorrect = (riddle as RiddleRecord).answers.some((candidate) => normalizeText(candidate) === normalizeText(answer));
         const { data, error } = await supabase.rpc('record_riddle_attempt', { p_player_id: locals.player.id, p_riddle_id: riddleId, p_is_correct: isCorrect }).single();
-        if (error || !data) return json({ error: 'Ta próba jest niedostępna' }, { status: 409 });
+
+        if (error) {
+            // The RPC uses P0001 only for expected game-state conflicts.
+            // Do not present missing migrations or database failures as an exhausted attempt.
+            if (error.code === 'P0001') {
+                return json({ error: 'Ta próba została już wykorzystana. Odświeżono stan zagadki.' }, { status: 409 });
+            }
+
+            console.error('record_riddle_attempt RPC failed', error);
+            return json({ error: 'Nie udało się zapisać odpowiedzi. Spróbuj ponownie później.' }, { status: 500 });
+        }
+
+        if (!data) {
+            console.error('record_riddle_attempt RPC returned no data');
+            return json({ error: 'Nie udało się zapisać odpowiedzi. Spróbuj ponownie później.' }, { status: 500 });
+        }
         const result = data as SubmitRpcResult;
         return json({ isCorrect: result.is_correct, hintsRevealed: result.hints_revealed, attemptsCount: result.attempts_count, exhausted: Boolean(result.exhausted_at), message: result.is_correct ? 'Gratulacje! To poprawna odpowiedź!' : result.exhausted_at ? 'Wykorzystano wszystkie próby i podpowiedzi.' : 'To nie jest poprawna odpowiedź. Odkryj podpowiedź, aby spróbować ponownie.' });
     } catch (err) {

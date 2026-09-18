@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { invalidateAll } from '$app/navigation';
     import type { PageData } from './$types';
     import type { Hint } from '$lib/server/riddle';
 
@@ -62,6 +63,10 @@
             feedback = result.message ?? result.error ?? 'Nie udało się zapisać odpowiedzi.';
 
             if (!response.ok) {
+                if (response.status === 409) {
+                    // A duplicate request or a concurrent tab can make the client state stale.
+                    await invalidateAll();
+                }
                 status = 'error';
                 return;
             }
