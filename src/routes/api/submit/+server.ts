@@ -1,8 +1,24 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 import { env } from '$env/dynamic/private';
 import { RIDDLES } from '$lib/server/riddle';
 import type { SubmissionInsert } from '$lib/types/database';
+
+const optionalTrimmedString = z.preprocess((value) => {
+    if (typeof value !== 'string') return value;
+
+    const trimmedValue = value.trim();
+    return trimmedValue === '' ? undefined : trimmedValue;
+}, z.string().min(1).optional());
+
+const submitPayloadSchema = z.object({
+    riddleId: z.string().trim().min(1),
+    answer: z.string().trim().min(1),
+    nickname: optionalTrimmedString,
+    playerId: optionalTrimmedString,
+    hints_used: z.number().int().min(0).default(0)
+}).strict();
 
 function normalizeText(text: string): string {
     return text
@@ -15,16 +31,18 @@ function normalizeText(text: string): string {
 
 export const POST: RequestHandler = async ({ request, cookies, locals }) => {
     try {
-        const body = await request.json();
-        const { riddleId, answer, nickname, hints_used, playerId: bodyPlayerId } = body;
+        const parseResult = submitPayloadSchema.safeParse(await request.json());
 
-        if (!riddleId || typeof riddleId !== 'string') {
-            return json({ error: 'Brak identyfikatora zagadki' }, { status: 400 });
+        if (!parseResult.success) {
+            const validationErrors = parseResult.error.flatten();
+            return json({
+                error: 'Nieprawidłowe dane odpowiedzi',
+                fieldErrors: validationErrors.fieldErrors,
+                formErrors: validationErrors.formErrors
+            }, { status: 400 });
         }
 
-        if (typeof answer !== 'string' || answer.trim() === '') {
-            return json({ error: 'Odpowiedź nie może być pusta' }, { status: 400 });
-        }
+        const { riddleId, answer, nickname, hints_used, playerId: bodyPlayerId } = parseResult.data;
 
         const riddle = RIDDLES[riddleId];
         if (!riddle) {
@@ -34,22 +52,16 @@ export const POST: RequestHandler = async ({ request, cookies, locals }) => {
         const normalizedUserAnswer = normalizeText(answer);
         const isCorrect = riddle.answers.some((ans) => normalizeText(ans) === normalizedUserAnswer);
 
-        const parsedHintsUsed = typeof hints_used === 'number' ? hints_used : 0;
-
         const supabaseUrl = env.SUPABASE_URL;
         const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
         if (supabaseUrl && supabaseKey) {
             const supabase = createClient(supabaseUrl, supabaseKey);
 
-            let playerId = (typeof bodyPlayerId === 'string' && bodyPlayerId.trim())
-                ? bodyPlayerId.trim()
-                : (locals.player?.id || cookies.get('player_id') || null);
+            let playerId = bodyPlayerId ?? locals.player?.id ?? cookies.get('player_id') ?? null;
 
             const cookiePlayerNickname = cookies.get('player_nickname');
-            let finalNickname = (typeof nickname === 'string' && nickname.trim())
-                ? nickname.trim()
-                : (locals.player?.nickname || cookiePlayerNickname || null);
+            let finalNickname = nickname ?? locals.player?.nickname ?? cookiePlayerNickname ?? null;
 
             if (!playerId && finalNickname && finalNickname !== 'Anonim' && finalNickname !== 'Gość') {
                 const { data: player } = await supabase
@@ -79,7 +91,7 @@ export const POST: RequestHandler = async ({ request, cookies, locals }) => {
                     player_id: playerId,
                     nickname: finalNickname || 'Gracz',
                     riddle_id: riddleId,
-                    hints_used: parsedHintsUsed,
+                    hints_used,
                     is_correct: isCorrect
                 };
 

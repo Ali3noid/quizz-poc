@@ -1,27 +1,33 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 import { env } from '$env/dynamic/private';
 import { dev } from '$app/environment';
 import { hashPassword } from '$lib/server/auth';
 
+const registerPayloadSchema = z.object({
+    nickname: z.string()
+        .trim()
+        .min(3, 'Nick musi mieć co najmniej 3 znaki')
+        .max(30, 'Nick może mieć maksymalnie 30 znaków'),
+    password: z.string().min(4, 'Hasło musi mieć co najmniej 4 znaki')
+}).strict();
+
 export const POST: RequestHandler = async ({ request, cookies }) => {
     try {
-        const body = await request.json();
-        const { nickname, password } = body;
+        const parseResult = registerPayloadSchema.safeParse(await request.json());
 
-        if (typeof nickname !== 'string' || nickname.trim().length < 3) {
-            return json({ ok: false, message: 'Nick musi mieć co najmniej 3 znaki' }, { status: 400 });
+        if (!parseResult.success) {
+            const validationErrors = parseResult.error.flatten();
+            return json({
+                ok: false,
+                message: 'Nieprawidłowe dane rejestracji',
+                fieldErrors: validationErrors.fieldErrors,
+                formErrors: validationErrors.formErrors
+            }, { status: 400 });
         }
 
-        if (nickname.trim().length > 30) {
-            return json({ ok: false, message: 'Nick może mieć maksymalnie 30 znaków' }, { status: 400 });
-        }
-
-        if (typeof password !== 'string' || password.length < 4) {
-            return json({ ok: false, message: 'Hasło musi mieć co najmniej 4 znaki' }, { status: 400 });
-        }
-
-        const trimmedNickname = nickname.trim();
+        const { nickname: trimmedNickname, password } = parseResult.data;
         const supabaseUrl = env.SUPABASE_URL;
         const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
