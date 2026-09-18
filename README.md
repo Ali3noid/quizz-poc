@@ -25,6 +25,11 @@ Copy `empty.env` to `.env.local`, then set `GATE_PASSWORD`, `SUPABASE_URL`, and 
 
 ## Migrations and new riddles
 
-Run `supabase/migrations/202609190001_multi_riddle_progress.sql` once in the Supabase SQL Editor. It assumes the existing `players` and `submissions` tables are empty, so it does not backfill historical results. The migration creates riddles, persistent progress, and atomic functions for hints and attempts.
+Run the migrations once in the Supabase SQL Editor, in filename order:
+
+1. `supabase/migrations/2026-09-19_000_players_submissions.sql` creates the `players` and `submissions` tables.
+2. `supabase/migrations/2026-09-19_001_multi_riddle_progress.sql` creates riddles, persistent progress, and atomic functions for hints and attempts.
+
+The migrations assume a fresh database and do not backfill historical results.
 
 Add a new riddle using `supabase/examples/add-riddle.sql`, with explicit ISO `timestamptz` values. Activity windows are half-open, `[starts_at, ends_at)`; overlapping schedules are rejected by the database.

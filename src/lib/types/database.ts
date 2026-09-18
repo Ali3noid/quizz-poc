@@ -40,6 +40,29 @@ export interface PlayerRiddleProgress {
 }
 
 export type RiddleStatus = 'current' | 'solved' | 'unsolved' | 'missed' | 'archived';
-export interface RiddleListItem { id: string; question: string; images: string[]; hintCount: number; startsAt: string; endsAt: string; status: RiddleStatus; hintsRevealed: number; attemptsCount: number; isOpen: boolean; }
-export interface HintRpcResult { hints_revealed: number; hint: import('$lib/server/riddle').Hint; }
-export interface SubmitRpcResult { is_correct: boolean; hints_revealed: number; attempts_count: number; solved_at: string | null; exhausted_at: string | null; }
+
+export interface RiddleListItem {
+    id: string;
+    question: string;
+    images: string[];
+    hintCount: number;
+    startsAt: string;
+    endsAt: string;
+    status: RiddleStatus;
+    hintsRevealed: number;
+    attemptsCount: number;
+    isOpen: boolean;
+}
+
+export interface HintRpcResult {
+    hints_revealed: number;
+    hint: import('$lib/server/riddle').Hint;
+}
+
+export interface SubmitRpcResult {
+    is_correct: boolean;
+    hints_revealed: number;
+    attempts_count: number;
+    solved_at: string | null;
+    exhausted_at: string | null;
+}
