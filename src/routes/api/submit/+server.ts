@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { env } from '$env/dynamic/private';
 import { RIDDLES } from '$lib/server/riddle';
+import { consumeSubmitAttempt } from '$lib/server/submit-rate-limit';
 import type { SubmissionInsert } from '$lib/types/database';
 
 const optionalTrimmedString = z.preprocess((value) => {
@@ -29,7 +30,7 @@ function normalizeText(text: string): string {
         .replace(/\s+/g, ' ');
 }
 
-export const POST: RequestHandler = async ({ request, cookies, locals }) => {
+export const POST: RequestHandler = async ({ request, cookies, locals, getClientAddress }) => {
     try {
         const parseResult = submitPayloadSchema.safeParse(await request.json());
 
@@ -47,6 +48,20 @@ export const POST: RequestHandler = async ({ request, cookies, locals }) => {
         const riddle = RIDDLES[riddleId];
         if (!riddle) {
             return json({ error: 'Nie znaleziono zagadki' }, { status: 404 });
+        }
+
+        // Do not use playerId from the request body: it can be forged by a client.
+        const actor = locals.player?.id || getClientAddress();
+        const rateLimit = consumeSubmitAttempt(`${actor}:${riddleId}`);
+
+        if (!rateLimit.allowed) {
+            return json({
+                error: 'Zbyt wiele prób. Poczekaj chwilę przed kolejną odpowiedzią.',
+                retryAfterSeconds: rateLimit.retryAfterSeconds
+            }, {
+                status: 429,
+                headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }
+            });
         }
 
         const normalizedUserAnswer = normalizeText(answer);
