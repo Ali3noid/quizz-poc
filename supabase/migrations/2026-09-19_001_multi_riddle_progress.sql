@@ -54,7 +54,7 @@ begin
   select * into v_progress from player_riddle_progress where player_id = p_player_id and riddle_id = p_riddle_id for update;
   if v_progress.solved_at is not null or v_progress.exhausted_at is not null then raise exception 'riddle is finished' using errcode = 'P0001'; end if;
   if v_progress.hints_revealed >= jsonb_array_length(v_riddle.hints) then raise exception 'no hints remain' using errcode = 'P0001'; end if;
-  update player_riddle_progress set hints_revealed = hints_revealed + 1, updated_at = now() where player_id = p_player_id and riddle_id = p_riddle_id returning * into v_progress;
+  update player_riddle_progress as progress set hints_revealed = progress.hints_revealed + 1, updated_at = now() where progress.player_id = p_player_id and progress.riddle_id = p_riddle_id returning * into v_progress;
   return query select v_progress.hints_revealed, v_riddle.hints -> (v_progress.hints_revealed - 1);
 end;
 $$;

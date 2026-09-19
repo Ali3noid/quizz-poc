@@ -30,6 +30,7 @@ Run the migrations once in the Supabase SQL Editor, in filename order:
 1. `supabase/migrations/2026-09-19_000_players_submissions.sql` creates the `players` and `submissions` tables.
 2. `supabase/migrations/2026-09-19_001_multi_riddle_progress.sql` creates riddles, persistent progress, and atomic functions for hints and attempts.
 3. `supabase/migrations/2026-09-19_002_fix_record_riddle_attempt_ambiguity.sql` updates the attempt RPC to resolve an ambiguous column reference. Apply this migration to databases where migration `001` has already run.
+4. `supabase/migrations/2026-09-19_003_fix_reveal_riddle_hint_ambiguity.sql` applies the equivalent fix to the hint RPC.
 
 The migrations assume a fresh database and do not backfill historical results.
 

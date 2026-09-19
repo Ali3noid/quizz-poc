@@ -22,8 +22,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             })
             .single();
 
-        if (error || !data) {
+        if (error?.code === 'P0001') {
             return json({ error: 'Podpowiedź jest niedostępna' }, { status: 409 });
+        }
+
+        if (error || !data) {
+            console.error('reveal_riddle_hint RPC failed', error);
+            return json({ error: 'Nie udało się pobrać podpowiedzi. Spróbuj ponownie później.' }, { status: 500 });
         }
 
         const result = data as HintRpcResult;
