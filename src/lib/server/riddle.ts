@@ -8,6 +8,7 @@ export interface RiddleRecord {
     answers: string[];
     starts_at: string;
     ends_at: string;
+    created_at: string;
 }
 
 export interface SafeRiddle {

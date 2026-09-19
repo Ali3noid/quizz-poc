@@ -128,7 +128,7 @@
             {#if feedback}
                 <div class="mt-4 rounded-2xl border p-4 {status === 'success' ? 'border-emerald-700 bg-emerald-950/30 text-emerald-200' : 'border-rose-800 bg-rose-950/30 text-rose-200'}">
                     <p>{feedback}</p>
-                    {#if status === 'success'}
+                    {#if status === 'success' || exhausted}
                         <div class="mt-3 flex gap-4"><a href="/" class="underline">Lista zagadek</a><a href="/ranking" class="underline">Ranking</a></div>
                     {/if}
                 </div>

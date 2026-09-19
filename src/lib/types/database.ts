@@ -43,14 +43,9 @@ export type RiddleStatus = 'current' | 'solved' | 'unsolved' | 'missed' | 'archi
 
 export interface RiddleListItem {
     id: string;
-    question: string;
-    images: string[];
-    hintCount: number;
-    startsAt: string;
+    createdAt: string;
     endsAt: string;
     status: RiddleStatus;
-    hintsRevealed: number;
-    attemptsCount: number;
     isOpen: boolean;
 }
 

@@ -11,7 +11,7 @@ function toProgress(value: unknown): PlayerRiddleProgress | null {
     return value && typeof value === 'object' ? value as PlayerRiddleProgress : null;
 }
 
-function statusFor(riddle: RiddleRecord, progress: PlayerRiddleProgress | null, playerCreatedAt: string, now: Date): RiddleStatus {
+function statusFor(riddle: Pick<RiddleRecord, 'ends_at'>, progress: PlayerRiddleProgress | null, playerCreatedAt: string, now: Date): RiddleStatus {
     if (progress?.solved_at) return 'solved';
     if (new Date(riddle.ends_at) <= now) {
         return new Date(riddle.ends_at) <= new Date(playerCreatedAt)
@@ -28,7 +28,7 @@ export async function listRiddlesForPlayer(playerId: string, playerCreatedAt: st
     const supabase = getServerSupabase();
     const { data, error } = await supabase
         .from('riddles')
-        .select('*')
+        .select('id, ends_at, created_at')
         .lte('starts_at', new Date().toISOString())
         .order('starts_at', { ascending: false });
 
@@ -42,15 +42,15 @@ export async function listRiddlesForPlayer(playerId: string, playerCreatedAt: st
     const byRiddle = new Map((progress ?? []).map((item) => [item.riddle_id, item as PlayerRiddleProgress]));
     const now = new Date();
 
-    return ((data ?? []) as RiddleRecord[]).map((riddle) => {
+    return ((data ?? []) as Pick<RiddleRecord, 'id' | 'ends_at' | 'created_at'>[]).map((riddle) => {
         const item = byRiddle.get(riddle.id) ?? null;
         const status = statusFor(riddle, item, playerCreatedAt, now);
 
         return {
-            ...toSafeRiddle(riddle),
+            id: riddle.id,
+            createdAt: riddle.created_at,
+            endsAt: riddle.ends_at,
             status,
-            hintsRevealed: item?.hints_revealed ?? 0,
-            attemptsCount: item?.attempts_count ?? 0,
             isOpen: status === 'current' && !item?.solved_at && !item?.exhausted_at
         };
     });

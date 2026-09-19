@@ -56,6 +56,9 @@
         current: 'Aktywna', solved: 'Rozwiązana', unsolved: 'Nieodgadnięta', missed: 'Pominięta', archived: 'Archiwalna'
     };
     function statusLabel(status: unknown): string { return labels[status as RiddleListItem['status']] ?? 'Niedostępna'; }
+    function formatDate(value: string): string {
+        return new Intl.DateTimeFormat('pl-PL', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value));
+    }
 </script>
 
 <main class="min-h-screen bg-neutral-950 p-4 text-neutral-100 sm:p-8">
@@ -89,7 +92,7 @@
                 {#each data.riddles as riddle}
                     <article class="rounded-2xl border p-5 {riddle.status === 'current' && riddle.isOpen ? 'border-emerald-700 bg-emerald-950/20' : 'border-neutral-800 bg-neutral-900/60'}">
                         <div class="flex flex-wrap items-center justify-between gap-3">
-                            <div><span class="rounded-full bg-neutral-800 px-3 py-1 text-xs">{statusLabel(riddle.status)}</span><h2 class="mt-3 text-xl font-semibold">{riddle.question}</h2><p class="mt-1 text-sm text-neutral-400">Podpowiedzi: {riddle.hintsRevealed} / {riddle.hintCount} · Próby: {riddle.attemptsCount}</p></div>
+                            <div><span class="rounded-full bg-neutral-800 px-3 py-1 text-xs">{statusLabel(riddle.status)}</span><p class="mt-3 text-sm text-neutral-300">Dodano: {formatDate(riddle.createdAt)}</p><p class="mt-1 text-sm text-neutral-400">Aktywna do: {formatDate(riddle.endsAt)}</p></div>
                             {#if riddle.isOpen}<a href={`/riddles/${riddle.id}`} class="rounded-xl bg-neutral-100 px-5 py-3 font-bold text-neutral-900">Otwórz zagadkę</a>{:else}<span class="text-sm text-neutral-500">Niedostępna</span>{/if}
                         </div>
                     </article>
