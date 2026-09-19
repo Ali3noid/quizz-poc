@@ -71,9 +71,9 @@ begin
   if v_progress.solved_at is not null or v_progress.exhausted_at is not null or v_progress.last_attempt_hint_index = v_progress.hints_revealed then raise exception 'attempt unavailable' using errcode = 'P0001'; end if;
   select nickname into v_nickname from players where id = p_player_id;
   insert into submissions (player_id, nickname, riddle_id, hints_used, is_correct) values (p_player_id, coalesce(v_nickname, 'Gracz'), p_riddle_id, v_progress.hints_revealed, p_is_correct);
-  update player_riddle_progress set attempts_count = attempts_count + 1, last_attempt_hint_index = hints_revealed,
+  update player_riddle_progress as progress set attempts_count = progress.attempts_count + 1, last_attempt_hint_index = progress.hints_revealed,
     solved_at = case when p_is_correct then now() else null end,
-    exhausted_at = case when not p_is_correct and hints_revealed = jsonb_array_length(v_riddle.hints) then now() else null end,
+    exhausted_at = case when not p_is_correct and progress.hints_revealed = jsonb_array_length(v_riddle.hints) then now() else null end,
     updated_at = now()
   where player_id = p_player_id and riddle_id = p_riddle_id returning * into v_progress;
   return query select p_is_correct, v_progress.hints_revealed, v_progress.attempts_count, v_progress.solved_at, v_progress.exhausted_at;
