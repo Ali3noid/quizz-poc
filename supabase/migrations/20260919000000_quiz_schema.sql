@@ -60,23 +60,6 @@ create table public.player_riddle_progress (
 create index player_riddle_progress_riddle_id_idx on public.player_riddle_progress (riddle_id);
 create index player_riddle_progress_solved_at_idx on public.player_riddle_progress (solved_at) where solved_at is not null;
 
-insert into public.riddles (id, question, images, hints, answers, starts_at, ends_at) values (
-  'riddle-2026-09-19',
-  'Która firma zajmuje drugie miejsce pod względem przychodu na pracownika (Revenue per FTE), skoro liderem w tym sektorze (IT, technologie) jest marka widoczna poniżej?',
-  '["https://xdisrxwpwbglsinkuldu.supabase.co/storage/v1/object/public/quizz-assets/001/Screenshot_20260919-005357.png"]'::jsonb,
-  '[
-    {"image": "https://xdisrxwpwbglsinkuldu.supabase.co/storage/v1/object/public/quizz-assets/001/Screenshot_20260919-005410.png"},
-    {"image": "https://xdisrxwpwbglsinkuldu.supabase.co/storage/v1/object/public/quizz-assets/001/IMG_20190331_0551222.jpg"},
-    {"image": "https://xdisrxwpwbglsinkuldu.supabase.co/storage/v1/object/public/quizz-assets/001/7369.png"},
-    "Zaskakujący fakt: masowe zloty amerykańskiej prawicy nierzadko prowadziły do przeciążenia serwerów flagowej aplikacji tej firmy.",
-    {"text":"Pewnym dwóm samotnym kowbojom taka aplikacja sporo by ułatwiła.", "image":"https://xdisrxwpwbglsinkuldu.supabase.co/storage/v1/object/public/quizz-assets/001/PrimeBrokeback2-800x500.jpg"}
-  ]'::jsonb,
-  array['grindr', 'Grindr', 'GRINDR', 'grinder', 'Grinder', 'GRINDER'],
-  '2026-09-19T01:00:00+02:00'::timestamptz,
-  '2028-09-20T23:59:59+02:00'::timestamptz
-);
-);
-
 create or replace function public.reveal_riddle_hint(p_player_id uuid, p_riddle_id text)
 returns table(hints_revealed integer, hint jsonb)
 language plpgsql security definer set search_path = public as $$
