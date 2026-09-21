@@ -9,19 +9,24 @@ export interface RankingEntry {
     lastActivityAt: string;
 }
 
+interface RankingRow {
+    player_id: string;
+    nickname: string;
+    hints_used: number;
+    solved_count: number;
+    last_activity_at: string;
+}
+
 export const load: PageServerLoad = async () => {
     try {
         const supabase = getServerSupabase();
 
         const { data, error } = await supabase
-            .from('submissions')
-            .select(`
-                player_id,
-                nickname,
-                hints_used,
-                is_correct,
-                created_at
-            `);
+            .from('ranking_entries')
+            .select('player_id, nickname, hints_used, solved_count, last_activity_at')
+            .order('solved_count', { ascending: false })
+            .order('hints_used', { ascending: true })
+            .order('last_activity_at', { ascending: true });
 
         if (error) {
             console.error('Błąd pobierania rankingu z Supabase:', error);
@@ -31,32 +36,13 @@ export const load: PageServerLoad = async () => {
             };
         }
 
-        const aggregate = new Map<string, RankingEntry>();
-        for (const item of (data || []) as Record<string, unknown>[]) {
-            const nickname = typeof item.nickname === 'string' && item.nickname.trim() ? item.nickname.trim() : 'Anonim';
-            const playerId = String(item.player_id);
-            const existing = aggregate.get(playerId);
-            const hints = typeof item.hints_used === 'number' ? item.hints_used : 0;
-            const solvedCount = item.is_correct === true ? 1 : 0;
-            const activityAt = typeof item.created_at === 'string' ? item.created_at : '';
-            aggregate.set(playerId, existing
-                ? {
-                    ...existing,
-                    solvedCount: existing.solvedCount + solvedCount,
-                    hintsUsed: existing.hintsUsed + hints,
-                    lastActivityAt: existing.lastActivityAt < activityAt ? existing.lastActivityAt : activityAt
-                }
-                : { id: playerId, nickname, solvedCount, hintsUsed: hints, lastActivityAt: activityAt });
-        }
-        const rankings = [...aggregate.values()];
-
-        rankings.sort((a, b) => {
-            if (a.solvedCount !== b.solvedCount) return b.solvedCount - a.solvedCount;
-            if (a.hintsUsed !== b.hintsUsed) {
-                return a.hintsUsed - b.hintsUsed;
-            }
-            return new Date(a.lastActivityAt).getTime() - new Date(b.lastActivityAt).getTime();
-        });
+        const rankings: RankingEntry[] = ((data ?? []) as RankingRow[]).map((row) => ({
+            id: row.player_id,
+            nickname: row.nickname,
+            hintsUsed: row.hints_used,
+            solvedCount: row.solved_count,
+            lastActivityAt: row.last_activity_at
+        }));
 
         return {
             rankings,
