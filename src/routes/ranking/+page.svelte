@@ -31,7 +31,7 @@
                     Ranking Graczy
                 </h1>
                 <p class="text-sm text-neutral-400 mt-1">
-                    Łączny wynik ze wszystkich rozwiązanych zagadek.
+                    Osoby, które wysłały co najmniej jedną odpowiedź.
                 </p>
             </div>
             <div class="bg-neutral-950/80 border border-neutral-800 rounded-2xl px-5 py-3 text-center self-center sm:self-auto shrink-0">
@@ -56,9 +56,9 @@
                     <div class="w-16 h-16 rounded-full bg-neutral-800/80 border border-neutral-700 flex items-center justify-center text-2xl">
                         🎯
                     </div>
-                    <h3 class="text-xl font-semibold text-neutral-200">Brak zarejestrowanych wyników</h3>
+                    <h3 class="text-xl font-semibold text-neutral-200">Brak uczestników</h3>
                     <p class="text-sm text-neutral-400 max-w-md">
-                        Bądź pierwszym graczem, który rozwiąże zagadkę i zdobędzie miejsce w rankingu.
+                        Wyślij odpowiedź, aby pojawić się w rankingu.
                     </p>
                     <a
                         href="/"
@@ -76,7 +76,7 @@
                                 <th scope="col" class="py-4 px-6">Gracz</th>
                                 <th scope="col" class="py-4 px-6 text-center">Rozwiązane</th>
                                 <th scope="col" class="py-4 px-6 text-center">Podpowiedzi</th>
-                                <th scope="col" class="py-4 px-6 text-right">Ostatnie rozwiązanie</th>
+                                <th scope="col" class="py-4 px-6 text-right">Ostatnia aktywność</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-neutral-800/60 font-sans">
@@ -128,7 +128,7 @@
                                     </td>
 
                                     <td class="py-4 px-6 text-right whitespace-nowrap font-mono text-sm text-neutral-300">
-                                        {new Date(player.lastSolvedAt).toLocaleString('pl-PL')}
+                                        {new Date(player.lastActivityAt).toLocaleString('pl-PL')}
                                     </td>
                                 </tr>
                             {/each}

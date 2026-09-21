@@ -6,7 +6,7 @@ export interface RankingEntry {
     nickname: string;
     hintsUsed: number;
     solvedCount: number;
-    lastSolvedAt: string;
+    lastActivityAt: string;
 }
 
 export const load: PageServerLoad = async () => {
@@ -14,17 +14,14 @@ export const load: PageServerLoad = async () => {
         const supabase = getServerSupabase();
 
         const { data, error } = await supabase
-            .from('player_riddle_progress')
+            .from('submissions')
             .select(`
                 player_id,
-                hints_revealed,
-                solved_at,
-                players (
-                    id,
-                    nickname
-                )
-            `)
-            .not('solved_at', 'is', null);
+                nickname,
+                hints_used,
+                is_correct,
+                created_at
+            `);
 
         if (error) {
             console.error('Błąd pobierania rankingu z Supabase:', error);
@@ -36,23 +33,20 @@ export const load: PageServerLoad = async () => {
 
         const aggregate = new Map<string, RankingEntry>();
         for (const item of (data || []) as Record<string, unknown>[]) {
-            const playerObj = (item.players && typeof item.players === 'object')
-                ? (Array.isArray(item.players) ? item.players[0] : item.players)
-                : null;
-
-            const nickname = (playerObj && typeof playerObj === 'object' && typeof (playerObj as Record<string, unknown>).nickname === 'string' && (playerObj as Record<string, unknown>).nickname)
-                ? ((playerObj as Record<string, unknown>).nickname as string).trim()
-                : (typeof item.nickname === 'string' && item.nickname.trim())
-                ? item.nickname.trim()
-                : (typeof item.player === 'string' && item.player.trim())
-                ? item.player.trim()
-                : 'Anonim';
-
+            const nickname = typeof item.nickname === 'string' && item.nickname.trim() ? item.nickname.trim() : 'Anonim';
             const playerId = String(item.player_id);
             const existing = aggregate.get(playerId);
-            const hints = typeof item.hints_revealed === 'number' ? item.hints_revealed : 0;
-            const solvedAt = String(item.solved_at);
-            aggregate.set(playerId, existing ? { ...existing, solvedCount: existing.solvedCount + 1, hintsUsed: existing.hintsUsed + hints, lastSolvedAt: existing.lastSolvedAt < solvedAt ? existing.lastSolvedAt : solvedAt } : { id: playerId, nickname, solvedCount: 1, hintsUsed: hints, lastSolvedAt: solvedAt });
+            const hints = typeof item.hints_used === 'number' ? item.hints_used : 0;
+            const solvedCount = item.is_correct === true ? 1 : 0;
+            const activityAt = typeof item.created_at === 'string' ? item.created_at : '';
+            aggregate.set(playerId, existing
+                ? {
+                    ...existing,
+                    solvedCount: existing.solvedCount + solvedCount,
+                    hintsUsed: existing.hintsUsed + hints,
+                    lastActivityAt: existing.lastActivityAt < activityAt ? existing.lastActivityAt : activityAt
+                }
+                : { id: playerId, nickname, solvedCount, hintsUsed: hints, lastActivityAt: activityAt });
         }
         const rankings = [...aggregate.values()];
 
@@ -61,7 +55,7 @@ export const load: PageServerLoad = async () => {
             if (a.hintsUsed !== b.hintsUsed) {
                 return a.hintsUsed - b.hintsUsed;
             }
-            return new Date(a.lastSolvedAt).getTime() - new Date(b.lastSolvedAt).getTime();
+            return new Date(a.lastActivityAt).getTime() - new Date(b.lastActivityAt).getTime();
         });
 
         return {
