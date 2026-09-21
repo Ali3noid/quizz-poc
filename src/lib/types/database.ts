@@ -40,6 +40,7 @@ export interface PlayerRiddleProgress {
 }
 
 export type RiddleStatus = 'current' | 'solved' | 'unsolved' | 'missed' | 'archived';
+export type RiddleAnswerResult = 'correct' | 'incorrect' | null;
 
 export interface RiddleListItem {
     id: string;
@@ -47,6 +48,8 @@ export interface RiddleListItem {
     endsAt: string;
     status: RiddleStatus;
     isOpen: boolean;
+    hintsUsed: number;
+    lastAnswerResult: RiddleAnswerResult;
 }
 
 export interface HintRpcResult {

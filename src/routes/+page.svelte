@@ -56,6 +56,12 @@
         current: 'Aktywna', solved: 'Rozwiązana', unsolved: 'Nieodgadnięta', missed: 'Pominięta', archived: 'Archiwalna'
     };
     function statusLabel(status: unknown): string { return labels[status as RiddleListItem['status']] ?? 'Niedostępna'; }
+    function cardClasses(riddle: RiddleListItem): string {
+        if (riddle.lastAnswerResult === 'correct') return 'border-emerald-600 bg-emerald-950/30';
+        if (riddle.lastAnswerResult === 'incorrect') return 'border-rose-700 bg-rose-950/30';
+        if (riddle.status === 'current' && riddle.isOpen) return 'border-emerald-700 bg-emerald-950/20';
+        return 'border-neutral-800 bg-neutral-900/60';
+    }
     function formatDate(value: string): string {
         return new Intl.DateTimeFormat('pl-PL', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value));
     }
@@ -90,9 +96,14 @@
             {#if data.error}<p class="mt-6 rounded-xl border border-rose-800 bg-rose-950/30 p-4 text-rose-200">{data.error}</p>{/if}
             <section class="mt-8 grid gap-4">
                 {#each data.riddles as riddle}
-                    <article class="rounded-2xl border p-5 {riddle.status === 'current' && riddle.isOpen ? 'border-emerald-700 bg-emerald-950/20' : 'border-neutral-800 bg-neutral-900/60'}">
+                    <article class="rounded-2xl border p-5 {cardClasses(riddle)}">
                         <div class="flex flex-wrap items-center justify-between gap-3">
-                            <div><span class="rounded-full bg-neutral-800 px-3 py-1 text-xs">{statusLabel(riddle.status)}</span><p class="mt-3 text-sm text-neutral-300">Dodano: {formatDate(riddle.createdAt)}</p><p class="mt-1 text-sm text-neutral-400">Aktywna do: {formatDate(riddle.endsAt)}</p></div>
+                            <div>
+                                <span class="rounded-full bg-neutral-800 px-3 py-1 text-xs">{statusLabel(riddle.status)}</span>
+                                <p class="mt-3 text-sm text-neutral-300">Dodano: {formatDate(riddle.createdAt)}</p>
+                                <p class="mt-1 text-sm text-neutral-400">Aktywna do: {formatDate(riddle.endsAt)}</p>
+                                <p class="mt-1 text-sm text-neutral-400">Użyte podpowiedzi: {riddle.hintsUsed}</p>
+                            </div>
                             {#if riddle.isOpen}<a href={`/riddles/${riddle.id}`} class="rounded-xl bg-neutral-100 px-5 py-3 font-bold text-neutral-900">Otwórz zagadkę</a>{:else}<span class="text-sm text-neutral-500">Niedostępna</span>{/if}
                         </div>
                     </article>

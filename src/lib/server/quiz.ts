@@ -1,4 +1,4 @@
-import type { PlayerRiddleProgress, RiddleListItem, RiddleStatus } from '$lib/types/database';
+import type { PlayerRiddleProgress, RiddleAnswerResult, RiddleListItem, RiddleStatus } from '$lib/types/database';
 import { getServerSupabase } from '$lib/server/supabase';
 import { mapHints, toSafeRiddle, type Hint, type RiddleRecord, type SafeRiddle } from '$lib/server/riddle';
 
@@ -22,6 +22,12 @@ function statusFor(riddle: Pick<RiddleRecord, 'ends_at'>, progress: PlayerRiddle
     }
 
     return 'current';
+}
+
+function lastAnswerResultFor(progress: PlayerRiddleProgress | null): RiddleAnswerResult {
+    if (progress?.solved_at) return 'correct';
+    if (progress && progress.attempts_count > 0 && progress.last_attempt_hint_index === progress.hints_revealed) return 'incorrect';
+    return null;
 }
 
 export async function listRiddlesForPlayer(playerId: string, playerCreatedAt: string): Promise<RiddleListItem[]> {
@@ -51,7 +57,9 @@ export async function listRiddlesForPlayer(playerId: string, playerCreatedAt: st
             createdAt: riddle.created_at,
             endsAt: riddle.ends_at,
             status,
-            isOpen: status === 'current' && !item?.solved_at && !item?.exhausted_at
+            isOpen: status === 'current' && !item?.solved_at && !item?.exhausted_at,
+            hintsUsed: item?.hints_revealed ?? 0,
+            lastAnswerResult: lastAnswerResultFor(item)
         };
     });
 }
