@@ -30,11 +30,6 @@ set category = 'geography'
 where category is null
   and (question ilike '%wysp%' or question ilike '%island%');
 
-update public.riddles
-set category = 'movies_tv'
-where category is null
-  and id in ('film-interstellar', 'film-amelie', 'film-arrival');
-
 do $$
 begin
   if exists (select 1 from public.riddles where category is null) then
