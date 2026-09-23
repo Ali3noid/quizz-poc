@@ -132,7 +132,7 @@
         <a href="/" class="text-sm text-neutral-400 hover:text-white">← Wróć do listy zagadek</a>
 
         <section class="mt-6 text-center">
-            <h1 class="text-3xl font-bold sm:text-5xl">{data.riddle.question}</h1>
+            <h1 class="whitespace-pre-line text-3xl font-bold sm:text-5xl">{data.riddle.question}</h1>
             <div class="mx-auto mt-8 grid max-w-5xl gap-5 {data.riddle.images.length > 1 ? 'md:grid-cols-2' : ''}">
                 {#each data.riddle.images as src}
                     <img {src} alt="Kadr z zagadki" class="aspect-4/3 w-full rounded-3xl border border-neutral-800 bg-gray-900 object-contain" />
