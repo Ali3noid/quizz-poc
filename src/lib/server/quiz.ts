@@ -1,10 +1,13 @@
 import type { PlayerRiddleProgress, RiddleAnswerResult, RiddleListItem, RiddleStatus } from '$lib/types/database';
 import { getServerSupabase } from '$lib/server/supabase';
+import { getCategoryPollForPlayer } from '$lib/server/category-poll';
 import { mapHints, toSafeRiddle, type Hint, type RiddleRecord, type SafeRiddle } from '$lib/server/riddle';
 
 export interface PlayableRiddle extends SafeRiddle {
     revealedHints: Hint[];
     canAttempt: boolean;
+    completion: { solved: boolean; hintsUsed: number } | null;
+    poll: import('$lib/types/database').CategoryPoll | null;
 }
 
 function toProgress(value: unknown): PlayerRiddleProgress | null {
@@ -13,6 +16,7 @@ function toProgress(value: unknown): PlayerRiddleProgress | null {
 
 function statusFor(riddle: Pick<RiddleRecord, 'ends_at'>, progress: PlayerRiddleProgress | null, playerCreatedAt: string, now: Date): RiddleStatus {
     if (progress?.solved_at) return 'solved';
+    if (progress?.exhausted_at) return 'unsolved';
     if (new Date(riddle.ends_at) <= now) {
         return new Date(riddle.ends_at) <= new Date(playerCreatedAt)
             ? 'archived'
@@ -57,7 +61,7 @@ export async function listRiddlesForPlayer(playerId: string, playerCreatedAt: st
             createdAt: riddle.created_at,
             endsAt: riddle.ends_at,
             status,
-            isOpen: status === 'current' && !item?.solved_at && !item?.exhausted_at,
+            isOpen: Boolean(item?.solved_at || item?.exhausted_at) || (status === 'current' && !item?.solved_at && !item?.exhausted_at),
             hintsUsed: item?.hints_revealed ?? 0,
             lastAnswerResult: lastAnswerResultFor(item)
         };
@@ -72,7 +76,6 @@ export async function getCurrentPlayableRiddle(playerId: string, riddleId: strin
         .select('*')
         .eq('id', riddleId)
         .lte('starts_at', now)
-        .gt('ends_at', now)
         .maybeSingle();
 
     if (error) throw error;
@@ -87,15 +90,19 @@ export async function getCurrentPlayableRiddle(playerId: string, riddleId: strin
 
     if (progressError) throw progressError;
     const item = toProgress(progress);
-    if (item?.solved_at || item?.exhausted_at) return null;
 
     const typed = riddle as RiddleRecord;
+    const isFinished = Boolean(item?.solved_at || item?.exhausted_at);
+    if (!isFinished && new Date(typed.ends_at) <= new Date(now)) return null;
+
     const hints = mapHints(typed.hints);
     const revealed = item?.hints_revealed ?? 0;
 
     return {
         ...toSafeRiddle(typed),
         revealedHints: hints.slice(0, revealed),
-        canAttempt: item?.last_attempt_hint_index !== revealed
+        canAttempt: !isFinished && item?.last_attempt_hint_index !== revealed,
+        completion: isFinished ? { solved: Boolean(item?.solved_at), hintsUsed: revealed } : null,
+        poll: isFinished ? await getCategoryPollForPlayer(riddleId, playerId, item?.exhausted_at ? 6 : Math.min(revealed + 1, 6)) : null
     };
 }

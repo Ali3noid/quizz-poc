@@ -1,8 +1,8 @@
 import { redirect } from '@sveltejs/kit';
-import { getCurrentPlayableRiddle } from '$lib/server/quiz';
+import { getCurrentPlayableRiddle, type PlayableRiddle } from '$lib/server/quiz';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, cookies, params }) => {
+export const load = (async ({ locals, cookies, params }) => {
     if (!(locals.isAuthorized ?? cookies.get('gate_access') === 'granted') || !locals.player?.id) {
         redirect(303, '/');
     }
@@ -16,4 +16,4 @@ export const load: PageServerLoad = async ({ locals, cookies, params }) => {
         console.error('Could not load riddle', error);
         redirect(303, '/');
     }
-};
+}) satisfies PageServerLoad<{ riddle: PlayableRiddle }>;

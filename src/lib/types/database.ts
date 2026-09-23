@@ -1,3 +1,5 @@
+import type { RiddleCategory } from '$lib/categories';
+
 export interface Player {
     id: string;
     nickname: string;
@@ -18,6 +20,7 @@ export interface Submission {
 export interface RiddleRow {
     id: string;
     question: string;
+    category: RiddleCategory;
     images: unknown;
     hints: unknown;
     answers: string[];
@@ -37,6 +40,19 @@ export interface PlayerRiddleProgress {
     exhausted_at: string | null;
     created_at: string;
     updated_at: string;
+}
+
+export interface CategoryPollResult {
+    category: RiddleCategory;
+    percentage: number;
+}
+
+export interface CategoryPoll {
+    options: [RiddleCategory, RiddleCategory, RiddleCategory];
+    voteWeight: number;
+    selectedCategory: RiddleCategory | null;
+    results: CategoryPollResult[] | null;
+    totalVoters: number | null;
 }
 
 export type RiddleStatus = 'current' | 'solved' | 'unsolved' | 'missed' | 'archived';

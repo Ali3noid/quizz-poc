@@ -27,11 +27,17 @@ Copy `empty.env` to `.env.local`, then set `GATE_PASSWORD`, `SUPABASE_URL`, and 
 
 Run the migrations once in the Supabase SQL Editor, in filename order:
 
-1. `supabase/migrations/2026-09-19_000_players_submissions.sql` creates the `players` and `submissions` tables.
-2. `supabase/migrations/2026-09-19_001_multi_riddle_progress.sql` creates riddles, persistent progress, and atomic functions for hints and attempts.
-3. `supabase/migrations/2026-09-19_002_fix_record_riddle_attempt_ambiguity.sql` updates the attempt RPC to resolve an ambiguous column reference. Apply this migration to databases where migration `001` has already run.
-4. `supabase/migrations/2026-09-19_003_fix_reveal_riddle_hint_ambiguity.sql` applies the equivalent fix to the hint RPC.
+1. `supabase/migrations/20260919000000_quiz_schema.sql` creates players, riddles, submissions, persistent progress, and the atomic hint/attempt functions.
+2. `supabase/migrations/20260921000000_ranking_view.sql` creates the ranking view.
+3. `supabase/migrations/20260922000000_category_voting.sql` adds fixed riddle categories, persisted three-option polls, weighted votes, and admin authorization.
 
-The migrations assume a fresh database and do not backfill historical results.
+The category-voting migration backfills the known company and island riddles. It stops if another existing riddle has no explicit category mapping, so assign that row in the migration before applying it rather than accepting an incorrect default.
 
-Add a new riddle using `supabase/examples/add-riddle.sql`, with explicit ISO `timestamptz` values. Activity windows are half-open, `[starts_at, ends_at)`; overlapping schedules are rejected by the database.
+Add a new riddle using `supabase/examples/add-riddle.sql`, including one of the fixed category values and explicit ISO `timestamptz` values. Activity windows are half-open, `[starts_at, ends_at)`; overlapping schedules are rejected by the database. Its three poll options are generated once by a database trigger.
+
+Grant admin access to an existing player manually:
+
+```sql
+insert into public.admins (player_id)
+select id from public.players where lower(nickname) = lower('PLAYER_NICKNAME');
+```

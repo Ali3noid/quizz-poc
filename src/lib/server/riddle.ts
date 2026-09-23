@@ -1,8 +1,11 @@
+import type { RiddleCategory } from '$lib/categories';
+
 export type Hint = string | { text?: string; image?: string };
 
 export interface RiddleRecord {
     id: string;
     question: string;
+    category: RiddleCategory;
     images: unknown;
     hints: unknown;
     answers: string[];
@@ -14,6 +17,7 @@ export interface RiddleRecord {
 export interface SafeRiddle {
     id: string;
     question: string;
+    category: RiddleCategory;
     images: string[];
     hintCount: number;
     startsAt: string;
@@ -35,7 +39,7 @@ export function mapHints(value: unknown): Hint[] {
 }
 
 export function toSafeRiddle(riddle: RiddleRecord): SafeRiddle {
-    return { id: riddle.id, question: riddle.question, images: mapImages(riddle.images), hintCount: mapHints(riddle.hints).length, startsAt: riddle.starts_at, endsAt: riddle.ends_at };
+    return { id: riddle.id, question: riddle.question, category: riddle.category, images: mapImages(riddle.images), hintCount: mapHints(riddle.hints).length, startsAt: riddle.starts_at, endsAt: riddle.ends_at };
 }
 
 export function normalizeText(text: string): string {
