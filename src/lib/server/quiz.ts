@@ -1,4 +1,4 @@
-import type { PlayerRiddleProgress, RiddleAnswerResult, RiddleListItem, RiddleStatus } from '$lib/types/database';
+import type { PlayerRiddleProgress, RiddleAnswerResult, RiddleListItem, RiddleStatus, StartRiddleRpcResult } from '$lib/types/database';
 import { getServerSupabase } from '$lib/server/supabase';
 import { getCategoryPollForPlayer } from '$lib/server/category-poll';
 import { mapHints, toSafeRiddle, type Hint, type RiddleRecord, type SafeRiddle } from '$lib/server/riddle';
@@ -7,6 +7,7 @@ export interface PlayableRiddle extends SafeRiddle {
     revealedHints: Hint[];
     canAttempt: boolean;
     completion: { solved: boolean; hintsUsed: number } | null;
+    timing: { startedAt: string; completedAt: string | null; serverNow: string };
     poll: import('$lib/types/database').CategoryPoll | null;
 }
 
@@ -81,6 +82,17 @@ export async function getCurrentPlayableRiddle(playerId: string, riddleId: strin
     if (error) throw error;
     if (!riddle) return null;
 
+    const { data: timingData, error: timingError } = await supabase
+        .rpc('start_riddle', { p_player_id: playerId, p_riddle_id: riddleId })
+        .single();
+
+    if (timingError) {
+        if (timingError.code === 'P0001') return null;
+        throw timingError;
+    }
+    if (!timingData) throw new Error('start_riddle RPC returned no data');
+    const timing = timingData as StartRiddleRpcResult;
+
     const { data: progress, error: progressError } = await supabase
         .from('player_riddle_progress')
         .select('*')
@@ -103,6 +115,11 @@ export async function getCurrentPlayableRiddle(playerId: string, riddleId: strin
         revealedHints: hints.slice(0, revealed),
         canAttempt: !isFinished && item?.last_attempt_hint_index !== revealed,
         completion: isFinished ? { solved: Boolean(item?.solved_at), hintsUsed: revealed } : null,
+        timing: {
+            startedAt: timing.started_at,
+            completedAt: timing.completed_at,
+            serverNow: timing.server_now
+        },
         poll: isFinished ? await getCategoryPollForPlayer(riddleId, playerId, item?.exhausted_at ? 6 : Math.min(revealed + 1, 6)) : null
     };
 }

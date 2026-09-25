@@ -4,6 +4,7 @@
     import type { Hint } from '$lib/server/riddle';
     import { CATEGORY_LABELS, type RiddleCategory } from '$lib/categories';
     import type { CategoryPoll } from '$lib/types/database';
+    import { durationInSeconds, formatDuration } from '$lib/time';
 
     let { data } = $props<{ data: PageData }>();
     let hints = $state<Hint[]>([]);
@@ -17,12 +18,38 @@
     let poll = $state<CategoryPoll | null>(null);
     let voting = $state(false);
     let voteError = $state('');
+    let elapsedSeconds = $state(0);
+    let localCompletion = $state<{ riddleId: string; seconds: number } | null>(null);
 
     $effect(() => {
         hints = [...data.riddle.revealedHints];
         canAttempt = data.riddle.canAttempt;
         exhausted = Boolean(data.riddle.completion && !data.riddle.completion.solved);
         poll = data.riddle.poll;
+    });
+
+    $effect(() => {
+        const timing = data.riddle.timing;
+        const localSeconds = localCompletion && localCompletion.riddleId === data.riddle.id
+            ? localCompletion.seconds
+            : null;
+        const completedSeconds = timing.completedAt
+            ? durationInSeconds(timing.startedAt, timing.completedAt)
+            : localSeconds;
+
+        if (completedSeconds !== null) {
+            elapsedSeconds = completedSeconds;
+            return;
+        }
+
+        const initialSeconds = durationInSeconds(timing.startedAt, timing.serverNow);
+        const baseline = performance.now();
+        const updateTimer = () => {
+            elapsedSeconds = initialSeconds + Math.floor((performance.now() - baseline) / 1000);
+        };
+        updateTimer();
+        const interval = window.setInterval(updateTimer, 1000);
+        return () => window.clearInterval(interval);
     });
 
     async function revealHint() {
@@ -81,6 +108,9 @@
             canAttempt = false;
             exhausted = result.exhausted;
             status = result.isCorrect ? 'success' : 'error';
+            if (result.isCorrect && typeof result.completionSeconds === 'number') {
+                localCompletion = { riddleId: data.riddle.id, seconds: result.completionSeconds };
+            }
             if (result.isCorrect || result.exhausted) await invalidateAll();
         } catch {
             feedback = 'Błąd połączenia z serwerem.';
@@ -131,7 +161,10 @@
     <div class="mx-auto max-w-5xl py-4">
         <a href="/" class="text-sm text-neutral-400 hover:text-white">← Wróć do listy zagadek</a>
 
-        <section class="mt-6 text-center">
+        <section class="relative mt-6 pt-12 text-center sm:pt-0">
+            <div class="absolute right-0 top-0 rounded-lg border border-neutral-800 bg-neutral-900/80 px-3 py-1.5 font-mono text-xs text-neutral-400" aria-label="Czas rozwiązywania zagadki">
+                ⏱ {formatDuration(elapsedSeconds)}
+            </div>
             <h1 class="whitespace-pre-line text-3xl font-bold sm:text-5xl">{data.riddle.question}</h1>
             <div class="mx-auto mt-8 grid max-w-5xl gap-5 {data.riddle.images.length > 1 ? 'md:grid-cols-2' : ''}">
                 {#each data.riddle.images as src}

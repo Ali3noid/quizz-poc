@@ -1,7 +1,13 @@
 <script lang="ts">
     import type { PageData } from './$types';
+    import { formatDuration } from '$lib/time';
 
     let { data } = $props<{ data: PageData }>();
+
+    const pointsFormatter = new Intl.NumberFormat('pl-PL', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+    });
 </script>
 
 <main class="min-h-screen w-full bg-neutral-950 flex flex-col items-center p-4 sm:p-8 selection:bg-neutral-800 text-neutral-100">
@@ -69,11 +75,14 @@
                 </div>
             {:else}
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[600px]">
+                    <table class="w-full min-w-[980px] border-collapse text-left">
                         <thead>
                             <tr class="bg-neutral-900/90 border-b border-neutral-800 text-xs font-semibold uppercase tracking-wider text-neutral-400">
                                 <th scope="col" class="py-4 px-6 text-center w-24">Miejsce</th>
                                 <th scope="col" class="py-4 px-6">Gracz</th>
+                                <th scope="col" class="py-4 px-6 text-center">Punkty</th>
+                                <th scope="col" class="py-4 px-6 text-center">Premia za czas</th>
+                                <th scope="col" class="py-4 px-6 text-center">Czas aktualnej zagadki</th>
                                 <th scope="col" class="py-4 px-6 text-center">Rozwiązane</th>
                                 <th scope="col" class="py-4 px-6 text-center">Podpowiedzi</th>
                                 <th scope="col" class="py-4 px-6 text-right">Ostatnia aktywność</th>
@@ -115,6 +124,11 @@
                                         </div>
                                     </td>
 
+                                    <td class="py-4 px-6 text-center font-mono font-bold text-neutral-100">{pointsFormatter.format(player.totalPoints)}</td>
+                                    <td class="py-4 px-6 text-center font-mono text-emerald-300">{pointsFormatter.format(player.timeBonusPoints)}</td>
+                                    <td class="py-4 px-6 text-center font-mono text-neutral-200">
+                                        {player.currentRiddleSeconds === null ? '—' : formatDuration(player.currentRiddleSeconds)}
+                                    </td>
                                     <td class="py-4 px-6 text-center font-mono text-neutral-200">{player.solvedCount}</td>
                                     <td class="py-4 px-6 text-center whitespace-nowrap">
                                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium font-mono

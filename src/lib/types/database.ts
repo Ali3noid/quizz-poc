@@ -24,6 +24,7 @@ export interface RiddleRow {
     images: unknown;
     hints: unknown;
     answers: string[];
+    time_bonus_enabled: boolean;
     starts_at: string;
     ends_at: string;
     created_at: string;
@@ -33,6 +34,7 @@ export interface RiddleRow {
 export interface PlayerRiddleProgress {
     player_id: string;
     riddle_id: string;
+    started_at: string;
     hints_revealed: number;
     attempts_count: number;
     last_attempt_hint_index: number | null;
@@ -79,4 +81,12 @@ export interface SubmitRpcResult {
     attempts_count: number;
     solved_at: string | null;
     exhausted_at: string | null;
+    started_at: string;
+    completion_seconds: number | null;
+}
+
+export interface StartRiddleRpcResult {
+    started_at: string;
+    completed_at: string | null;
+    server_now: string;
 }

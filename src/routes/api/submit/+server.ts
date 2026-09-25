@@ -60,7 +60,16 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             return json({ error: 'Nie udało się zapisać odpowiedzi. Spróbuj ponownie później.' }, { status: 500 });
         }
         const result = data as SubmitRpcResult;
-        return json({ isCorrect: result.is_correct, hintsRevealed: result.hints_revealed, attemptsCount: result.attempts_count, exhausted: Boolean(result.exhausted_at), message: result.is_correct ? 'Gratulacje! To poprawna odpowiedź!' : result.exhausted_at ? 'Wykorzystano wszystkie próby i podpowiedzi.' : 'To nie jest poprawna odpowiedź. Odkryj podpowiedź, aby spróbować ponownie.' });
+        return json({
+            isCorrect: result.is_correct,
+            hintsRevealed: result.hints_revealed,
+            attemptsCount: result.attempts_count,
+            exhausted: Boolean(result.exhausted_at),
+            startedAt: result.started_at,
+            completedAt: result.solved_at,
+            completionSeconds: result.completion_seconds,
+            message: result.is_correct ? 'Gratulacje! To poprawna odpowiedź!' : result.exhausted_at ? 'Wykorzystano wszystkie próby i podpowiedzi.' : 'To nie jest poprawna odpowiedź. Odkryj podpowiedź, aby spróbować ponownie.'
+        });
     } catch (err) {
         console.error('Błąd podczas przetwarzania zgłoszenia:', err);
         return json({ error: 'Nieprawidłowe żądanie' }, { status: 400 });
