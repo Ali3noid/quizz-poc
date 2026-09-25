@@ -194,47 +194,54 @@
         </section>
 
         <section class="mx-auto mt-10 max-w-2xl">
-            {#if data.riddle.completion && poll}
+            {#if data.riddle.completion}
                 <div class="overflow-hidden rounded-3xl border {data.riddle.completion.solved ? 'border-emerald-800 bg-emerald-950/20' : 'border-amber-800 bg-amber-950/20'}">
                     <div class="p-6 sm:p-8">
                         <p class="text-2xl font-bold">{completionText(data.riddle.completion.solved, data.riddle.completion.hintsUsed)}</p>
+                        {#if !data.riddle.completion.solved && data.riddle.correctAnswer}
+                            <p class="mt-3 text-lg text-amber-100">Poprawna odpowiedź: <span class="font-bold">{data.riddle.correctAnswer}</span></p>
+                        {/if}
                         <p class="mt-2 text-neutral-300">Kategoria: <span class="font-semibold text-white">{categoryLabel(data.riddle.category)}</span></p>
                     </div>
 
-                    <div class="border-t border-neutral-800 bg-neutral-950/50 p-6 sm:p-8">
-                        <p class="text-sm uppercase tracking-wider text-neutral-400">Twój głos ma siłę <span class="font-mono font-bold text-white">{poll.voteWeight}</span></p>
+                    {#if poll}
+                        <div class="border-t border-neutral-800 bg-neutral-950/50 p-6 sm:p-8">
+                            <p class="text-sm uppercase tracking-wider text-neutral-400">Twój głos ma siłę <span class="font-mono font-bold text-white">{poll.voteWeight}</span></p>
 
-                        {#if !poll.selectedCategory}
-                            <h2 class="mt-3 text-xl font-bold">Na jaki temat chcesz kolejną zagadkę?</h2>
-                            <div class="mt-5 grid gap-3 sm:grid-cols-3">
-                                {#each poll.options as option}
-                                    <button onclick={() => vote(option)} disabled={voting} class="rounded-2xl border border-neutral-700 bg-neutral-900 px-4 py-4 font-bold transition hover:border-neutral-500 hover:bg-neutral-800 disabled:opacity-50">
-                                        {categoryLabel(option)}
-                                    </button>
-                                {/each}
-                            </div>
-                        {:else if poll.results}
-                            <h2 class="mt-3 text-xl font-bold">Wyniki głosowania</h2>
-                            <div class="mt-5 space-y-4">
-                                {#each poll.results as result}
-                                    <div>
-                                        <div class="flex items-center justify-between gap-4 text-sm">
-                                            <span class={result.category === poll.selectedCategory ? 'font-bold text-emerald-300' : 'text-neutral-200'}>{categoryLabel(result.category)}</span>
-                                            <span class="font-mono font-bold">{result.percentage}%</span>
+                            {#if !poll.selectedCategory}
+                                <h2 class="mt-3 text-xl font-bold">Na jaki temat chcesz kolejną zagadkę?</h2>
+                                <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                                    {#each poll.options as option}
+                                        <button onclick={() => vote(option)} disabled={voting} class="rounded-2xl border border-neutral-700 bg-neutral-900 px-4 py-4 font-bold transition hover:border-neutral-500 hover:bg-neutral-800 disabled:opacity-50">
+                                            {categoryLabel(option)}
+                                        </button>
+                                    {/each}
+                                </div>
+                            {:else if poll.results}
+                                <h2 class="mt-3 text-xl font-bold">Wyniki głosowania</h2>
+                                <div class="mt-5 space-y-4">
+                                    {#each poll.results as result}
+                                        <div>
+                                            <div class="flex items-center justify-between gap-4 text-sm">
+                                                <span class={result.category === poll.selectedCategory ? 'font-bold text-emerald-300' : 'text-neutral-200'}>{categoryLabel(result.category)}</span>
+                                                <span class="font-mono font-bold">{result.percentage}%</span>
+                                            </div>
+                                            <div class="mt-2 h-2 overflow-hidden rounded-full bg-neutral-800">
+                                                <div class="h-full rounded-full {result.category === poll.selectedCategory ? 'bg-emerald-400' : 'bg-neutral-500'}" style={`width: ${result.percentage}%`}></div>
+                                            </div>
                                         </div>
-                                        <div class="mt-2 h-2 overflow-hidden rounded-full bg-neutral-800">
-                                            <div class="h-full rounded-full {result.category === poll.selectedCategory ? 'bg-emerald-400' : 'bg-neutral-500'}" style={`width: ${result.percentage}%`}></div>
-                                        </div>
-                                    </div>
-                                {/each}
-                            </div>
-                            <p class="mt-6 text-sm text-neutral-400">{poll.totalVoters} {poll.totalVoters === 1 ? 'gracz zagłosował' : 'graczy zagłosowało'}</p>
-                            <p class="mt-2 font-semibold text-emerald-300">Twój głos: {categoryLabel(poll.selectedCategory)} ×{poll.voteWeight}</p>
-                        {/if}
+                                    {/each}
+                                </div>
+                                <p class="mt-6 text-sm text-neutral-400">{poll.totalVoters} {poll.totalVoters === 1 ? 'gracz zagłosował' : 'graczy zagłosowało'}</p>
+                                <p class="mt-2 font-semibold text-emerald-300">Twój głos: {categoryLabel(poll.selectedCategory)} ×{poll.voteWeight}</p>
+                            {/if}
 
-                        {#if voteError}<p class="mt-4 text-sm text-rose-300">{voteError}</p>{/if}
-                        <div class="mt-6 flex gap-4 text-sm"><a href="/" class="underline">Lista zagadek</a><a href="/ranking" class="underline">Ranking</a></div>
-                    </div>
+                            {#if voteError}<p class="mt-4 text-sm text-rose-300">{voteError}</p>{/if}
+                            <div class="mt-6 flex gap-4 text-sm"><a href="/" class="underline">Lista zagadek</a><a href="/ranking" class="underline">Ranking</a></div>
+                        </div>
+                    {:else}
+                        <div class="border-t border-neutral-800 bg-neutral-950/50 p-6 text-sm sm:p-8"><a href="/" class="underline">Lista zagadek</a><a href="/ranking" class="ml-4 underline">Ranking</a></div>
+                    {/if}
                 </div>
             {:else}
                 <p class="mb-2 text-sm text-neutral-400">

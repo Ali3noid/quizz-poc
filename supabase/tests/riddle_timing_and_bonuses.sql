@@ -1,6 +1,6 @@
 begin;
 
-select plan(4);
+select plan(5);
 
 truncate table public.players, public.riddles cascade;
 
@@ -73,6 +73,26 @@ end;
 $$;
 
 select pass('completion is idempotent and duration is calculated by the backend');
+
+insert into public.player_riddle_progress
+  (player_id, riddle_id, started_at, exhausted_at, attempts_count, last_attempt_hint_index)
+values
+  ('10000000-0000-4000-8000-000000000005', 'current', now() - interval '60 seconds', now(), 1, 0);
+
+do $$
+declare
+  v_timing record;
+begin
+  select * into v_timing
+  from public.start_riddle('10000000-0000-4000-8000-000000000005', 'current');
+
+  if v_timing.completed_at is distinct from v_timing.started_at + interval '60 seconds' then
+    raise exception 'Exhausted riddle did not expose its completion time';
+  end if;
+end;
+$$;
+
+select pass('exhausted riddle stops the timer');
 
 insert into public.player_riddle_progress
   (player_id, riddle_id, started_at, solved_at, attempts_count, last_attempt_hint_index)

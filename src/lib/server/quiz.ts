@@ -7,6 +7,7 @@ export interface PlayableRiddle extends SafeRiddle {
     revealedHints: Hint[];
     canAttempt: boolean;
     completion: { solved: boolean; hintsUsed: number } | null;
+    correctAnswer: string | null;
     timing: { startedAt: string; completedAt: string | null; serverNow: string };
     poll: import('$lib/types/database').CategoryPoll | null;
 }
@@ -115,6 +116,7 @@ export async function getCurrentPlayableRiddle(playerId: string, riddleId: strin
         revealedHints: hints.slice(0, revealed),
         canAttempt: !isFinished && item?.last_attempt_hint_index !== revealed,
         completion: isFinished ? { solved: Boolean(item?.solved_at), hintsUsed: revealed } : null,
+        correctAnswer: item?.exhausted_at ? typed.answers[0] ?? null : null,
         timing: {
             startedAt: timing.started_at,
             completedAt: timing.completed_at,
