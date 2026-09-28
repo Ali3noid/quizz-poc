@@ -72,7 +72,7 @@ export interface RiddleListItem {
 
 export interface HintRpcResult {
     hints_revealed: number;
-    hint: import('$lib/server/riddle').Hint;
+    hint: import('$lib/types/riddle').Hint;
 }
 
 export interface SubmitRpcResult {

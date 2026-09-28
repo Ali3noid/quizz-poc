@@ -1,7 +1,7 @@
 <script lang="ts">
     import { invalidateAll } from '$app/navigation';
     import type { PageData } from './$types';
-    import type { Hint } from '$lib/server/riddle';
+    import type { Hint } from '$lib/types/riddle';
     import { CATEGORY_LABELS, type RiddleCategory } from '$lib/categories';
     import type { CategoryPoll } from '$lib/types/database';
     import { durationInSeconds, formatDuration } from '$lib/time';
@@ -108,6 +108,7 @@
             canAttempt = false;
             exhausted = result.exhausted;
             status = result.isCorrect ? 'success' : 'error';
+            if (!result.isCorrect) answer = '';
             if (result.isCorrect && typeof result.completionSeconds === 'number') {
                 localCompletion = { riddleId: data.riddle.id, seconds: result.completionSeconds };
             }
@@ -165,7 +166,7 @@
             <div class="absolute right-0 top-0 rounded-lg border border-neutral-800 bg-neutral-900/80 px-3 py-1.5 font-mono text-xs text-neutral-400" aria-label="Czas rozwiązywania zagadki">
                 ⏱ {formatDuration(elapsedSeconds)}
             </div>
-            <h1 class="whitespace-pre-line text-3xl font-bold sm:text-5xl">{data.riddle.question}</h1>
+            <h1 class="mx-auto max-w-3xl whitespace-pre-line text-2xl font-bold leading-relaxed sm:text-3xl">{data.riddle.question}</h1>
             <div class="mx-auto mt-8 grid max-w-5xl gap-5 {data.riddle.images.length > 1 ? 'md:grid-cols-2' : ''}">
                 {#each data.riddle.images as src}
                     <img {src} alt="Kadr z zagadki" class="aspect-4/3 w-full rounded-3xl border border-neutral-800 bg-gray-900 object-contain" />
@@ -188,6 +189,9 @@
                     {:else}
                         {#if hint.text}<p class="mt-2">{hint.text}</p>{/if}
                         {#if hint.image}<img src={hint.image} alt={`Podpowiedź ${index + 1}`} class="mt-3 max-h-64 rounded-xl" />{/if}
+                        {#if hint.video}
+                            <video src={hint.video} autoplay muted loop playsinline preload="metadata" aria-label={`Podpowiedź ${index + 1}`} class="mt-3 max-h-64 max-w-full rounded-xl"></video>
+                        {/if}
                     {/if}
                 </div>
             {/each}

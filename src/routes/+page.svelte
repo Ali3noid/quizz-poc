@@ -57,9 +57,9 @@
     };
     function statusLabel(status: unknown): string { return labels[status as RiddleListItem['status']] ?? 'Niedostępna'; }
     function cardClasses(riddle: RiddleListItem): string {
+        if (riddle.status === 'current' && riddle.isOpen) return 'border-neutral-600 bg-neutral-800/70';
         if (riddle.lastAnswerResult === 'correct') return 'border-emerald-600 bg-emerald-950/30';
         if (riddle.lastAnswerResult === 'incorrect') return 'border-rose-700 bg-rose-950/30';
-        if (riddle.status === 'current' && riddle.isOpen) return 'border-emerald-700 bg-emerald-950/20';
         return 'border-neutral-800 bg-neutral-900/60';
     }
     function formatDate(value: string): string {

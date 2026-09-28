@@ -1,7 +1,8 @@
 import type { PlayerRiddleProgress, RiddleAnswerResult, RiddleListItem, RiddleStatus, StartRiddleRpcResult } from '$lib/types/database';
+import type { Hint } from '$lib/types/riddle';
 import { getServerSupabase } from '$lib/server/supabase';
 import { getCategoryPollForPlayer } from '$lib/server/category-poll';
-import { mapHints, toSafeRiddle, type Hint, type RiddleRecord, type SafeRiddle } from '$lib/server/riddle';
+import { mapHints, toSafeRiddle, type RiddleRecord, type SafeRiddle } from '$lib/server/riddle';
 
 export interface PlayableRiddle extends SafeRiddle {
     revealedHints: Hint[];

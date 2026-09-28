@@ -1,6 +1,5 @@
 import type { RiddleCategory } from '$lib/categories';
-
-export type Hint = string | { text?: string; image?: string };
+import type { Hint } from '$lib/types/riddle';
 
 export interface RiddleRecord {
     id: string;
@@ -27,7 +26,8 @@ export interface SafeRiddle {
 function isHint(value: unknown): value is Hint {
     return typeof value === 'string' || (typeof value === 'object' && value !== null &&
         (!('text' in value) || typeof value.text === 'string') &&
-        (!('image' in value) || typeof value.image === 'string'));
+        (!('image' in value) || typeof value.image === 'string') &&
+        (!('video' in value) || typeof value.video === 'string'));
 }
 
 export function mapImages(value: unknown): string[] {
